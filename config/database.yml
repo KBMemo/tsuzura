@@ -1,0 +1,67 @@
+# PostgreSQL — KBMemo と同一 primary DB（accounts 共有・Rodauth 共有）。
+# 開発: site と同じ credentials（RAILS_MASTER_KEY 共有）または DATABASE_URL。
+<%
+  require_relative "db_credentials"
+
+  def pg_connection(env = Rails.env)
+    DbCredentials.connection_options(env)
+  end
+
+  def pg_database(key, env = Rails.env)
+    DbCredentials.fetch(key, env)
+  end
+%>
+
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  host: <%= pg_connection(:development)[:host] %>
+  port: <%= pg_connection(:development)[:port] %>
+  username: <%= pg_connection(:development)[:username] %>
+  password: <%= pg_connection(:development)[:password] %>
+  database: <%= pg_database(:database, :development) %>
+
+test:
+  <<: *default
+  host: <%= pg_connection(:test)[:host] %>
+  port: <%= pg_connection(:test)[:port] %>
+  username: <%= pg_connection(:test)[:username] %>
+  password: <%= pg_connection(:test)[:password] %>
+  database: <%= pg_database(:database, :test) %>
+
+production:
+  primary:
+    <<: *default
+    host: <%= pg_connection(:production)[:host] %>
+    port: <%= pg_connection(:production)[:port] %>
+    username: <%= pg_connection(:production)[:username] %>
+    password: <%= pg_connection(:production)[:password] %>
+    database: <%= pg_database(:database, :production) %>
+  cache:
+    <<: *default
+    host: <%= pg_connection(:production)[:host] %>
+    port: <%= pg_connection(:production)[:port] %>
+    username: <%= pg_connection(:production)[:username] %>
+    password: <%= pg_connection(:production)[:password] %>
+    database: <%= pg_database(:cache_database, :production) %>
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *default
+    host: <%= pg_connection(:production)[:host] %>
+    port: <%= pg_connection(:production)[:port] %>
+    username: <%= pg_connection(:production)[:username] %>
+    password: <%= pg_connection(:production)[:password] %>
+    database: <%= pg_database(:queue_database, :production) %>
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *default
+    host: <%= pg_connection(:production)[:host] %>
+    port: <%= pg_connection(:production)[:port] %>
+    username: <%= pg_connection(:production)[:username] %>
+    password: <%= pg_connection(:production)[:password] %>
+    database: <%= pg_database(:cable_database, :production) %>
+    migrations_paths: db/cable_migrate
