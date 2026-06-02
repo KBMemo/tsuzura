@@ -14,6 +14,43 @@ bin/rails db:migrate
 PORT=3008 bin/rails server
 ```
 
+## 本番（systemd）
+
+`start.sh` が rbenv / `.env.production` を読み込んでから Puma を起動します（既定 `PORT=3008`）。
+
+```bash
+cp .env.example .env.production   # RAILS_MASTER_KEY 等を編集
+chmod 750 start.sh
+```
+
+`/etc/systemd/system/tsuzura.service` の例:
+
+```ini
+[Unit]
+Description=Tsuzura (media.kbmemo.net)
+After=network.target
+
+[Service]
+Type=simple
+User=kensei
+Group=kensei
+WorkingDirectory=/home/kensei/sites/kbmemo-media
+ExecStart=/home/kensei/sites/kbmemo-media/start.sh
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now tsuzura
+curl -fsS http://127.0.0.1:3008/up
+```
+
 ## テスト
 
 KBMemo と **同一 PostgreSQL test DB**（credentials 共有）を使います。
