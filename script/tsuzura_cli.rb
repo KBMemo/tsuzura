@@ -1,6 +1,6 @@
-#!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# CLI 本体。Zeitwerk 対象外（script/）— bin/tsuzura から require する。
 require "thor"
 require "net/http"
 require "json"
@@ -133,5 +133,3 @@ module TsuzuraCLI
     end
   end
 end
-
-TsuzuraCLI::Main.start(ARGV) if $PROGRAM_NAME == __FILE__
