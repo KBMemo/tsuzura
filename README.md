@@ -51,6 +51,18 @@ sudo systemctl enable --now tsuzura
 curl -fsS http://127.0.0.1:3008/up
 ```
 
+## 更新デプロイ（本番）
+
+`bin/deploy` で pull・`bundle install`・**`db:migrate`**（`tsuzura_*` テーブル等）・`tsuzura` ユニット再起動・ヘルスチェックを一括実行します。
+
+```bash
+cd /home/kensei/sites/kbmemo-media
+bin/deploy
+bin/deploy --branch main
+```
+
+詳細: [kbmemo_site/docs/deployment/production.adoc](../site/docs/deployment/production.adoc) の Tsuzura 節。
+
 ## テスト
 
 KBMemo と **同一 PostgreSQL test DB**（credentials 共有）を使います。

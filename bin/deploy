@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+SYSTEMD_UNIT="${TSUZURA_SYSTEMD_UNIT:-tsuzura}"
+GIT_REMOTE="${TSUZURA_GIT_REMOTE:-origin}"
+GIT_BRANCH=""
+SKIP_PULL=0
+SKIP_RESTART=0
+DRY_RUN=0
+
+usage() {
+  cat <<'EOF'
+Usage: bin/deploy [options]
+
+Pull the latest code, install dependencies, migrate the database,
+and restart the tsuzura systemd service (production server).
+
+Options:
+  -b, --branch BRANCH   git fetch/pull this branch (default: current branch)
+  --skip-pull           skip git pull
+  --skip-restart        skip systemctl restart and health check
+  -n, --dry-run         print commands without running them
+  -h, --help            show this help
+
+Environment:
+  TSUZURA_SYSTEMD_UNIT   systemd unit name (default: tsuzura)
+  TSUZURA_HEALTH_URL     health check URL (default: https://media.kbmemo.net/up)
+  TSUZURA_HEALTH_HOST    Host header for localhost checks (default: media.kbmemo.net)
+  TSUZURA_GIT_REMOTE     git remote (default: origin)
+
+Example:
+  cd /home/kensei/sites/kbmemo-media && bin/deploy
+  bin/deploy --branch main
+EOF
+}
+
+run() {
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    printf '+'
+    printf ' %q' "$@"
+    printf '\n'
+    return 0
+  fi
+  "$@"
+}
+
+step() {
+  echo "==> $*"
+}
+
+health_check() {
+  local url="$1"
+  local host_header="${TSUZURA_HEALTH_HOST:-}"
+
+  if [[ -z "${host_header}" && "${url}" =~ ^https?://(127\.0\.0\.1|localhost)([:/]|$) ]]; then
+    host_header="media.kbmemo.net"
+  fi
+
+  if [[ -n "${host_header}" ]]; then
+    curl -fsS -H "Host: ${host_header}" "${url}"
+  else
+    curl -fsS "${url}"
+  fi
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -b|--branch)
+      GIT_BRANCH="${2:?missing branch name}"
+      shift 2
+      ;;
+    --skip-pull)
+      SKIP_PULL=1
+      shift
+      ;;
+    --skip-restart)
+      SKIP_RESTART=1
+      shift
+      ;;
+    -n|--dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+# shellcheck source=scripts/production_env.sh
+source "${APP_ROOT}/scripts/production_env.sh"
+
+HEALTH_URL="${TSUZURA_HEALTH_URL:-https://media.kbmemo.net/up}"
+
+step "deploy tsuzura (${APP_ROOT}, RAILS_ENV=${RAILS_ENV})"
+
+if [[ "${SKIP_PULL}" -eq 0 ]]; then
+  step "git pull"
+  if [[ -n "${GIT_BRANCH}" ]]; then
+    run git fetch "${GIT_REMOTE}" "${GIT_BRANCH}"
+    run git checkout "${GIT_BRANCH}"
+    run git pull --ff-only "${GIT_REMOTE}" "${GIT_BRANCH}"
+  else
+    run git pull --ff-only "${GIT_REMOTE}"
+  fi
+fi
+
+step "bundle install"
+run bundle install
+
+step "db:migrate"
+run bundle exec rails db:migrate
+
+if [[ -f "${APP_ROOT}/start.sh" ]]; then
+  step "ensure start.sh is executable"
+  run chmod 750 "${APP_ROOT}/start.sh"
+fi
+
+if [[ "${SKIP_RESTART}" -eq 0 ]]; then
+  step "restart ${SYSTEMD_UNIT}"
+  run sudo systemctl restart "${SYSTEMD_UNIT}"
+
+  step "health check ${HEALTH_URL}"
+  if [[ "${DRY_RUN}" -eq 1 ]]; then
+    run health_check "${HEALTH_URL}"
+  else
+    for attempt in 1 2 3 4 5; do
+      if health_check "${HEALTH_URL}" >/dev/null; then
+        echo "health check OK"
+        break
+      fi
+      if [[ "${attempt}" -eq 5 ]]; then
+        echo "health check failed after restart: ${HEALTH_URL}" >&2
+        echo "check: sudo journalctl -u ${SYSTEMD_UNIT} -n 50 --no-pager" >&2
+        exit 1
+      fi
+      sleep 2
+    done
+  fi
+fi
+
+step "deploy finished"

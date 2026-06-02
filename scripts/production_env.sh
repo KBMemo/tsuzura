@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # 本番サーバー向け: rbenv / PATH と .env.production を読み込む。
-# start.sh から source する。
+# start.sh と bin/deploy から source する。
 
 if [[ -z "${APP_ROOT:-}" ]]; then
   APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
