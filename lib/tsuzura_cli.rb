@@ -8,6 +8,8 @@ require "uri"
 require "securerandom"
 
 module TsuzuraCLI
+  IMAGE_SUFFIXES = %w[.jpg .jpeg .png .gif .webp .heic .heif].freeze
+
   class Main < Thor
     package_name "tsuzura"
 
@@ -35,7 +37,7 @@ module TsuzuraCLI
 
     desc "media show ULID", "Show media metadata"
     def media(action, ulid = nil)
-      abort "Usage: tsuzura media show ULID" unless action == "show" && ulid.present?
+      abort "Usage: tsuzura media show ULID" unless action == "show" && !ulid.to_s.strip.empty?
 
       uri = URI.join(base_url, "/v1/media/#{ulid}")
       puts JSON.pretty_generate(get_json(uri))
@@ -46,16 +48,24 @@ module TsuzuraCLI
     private
 
     def expand_paths(paths)
-      paths.flat_map do |path|
-        p = Pathname.new(path)
-        if p.directory?
-          p.children.select(&:file?).sort
-        elsif p.file?
-          [ p ]
-        else
-          []
-        end
+      paths.flat_map { |path| expand_path(path) }.uniq.sort_by(&:to_s)
+    end
+
+    def expand_path(path)
+      p = Pathname.new(File.expand_path(path))
+      return [] unless p.exist?
+
+      if p.directory?
+        p.glob("**/*").select(&:file?).select { |file| image_file?(file) }
+      elsif p.file? && image_file?(p)
+        [ p ]
+      else
+        []
       end
+    end
+
+    def image_file?(path)
+      IMAGE_SUFFIXES.include?(path.extname.downcase)
     end
 
     def post_batch(files)
@@ -71,27 +81,27 @@ module TsuzuraCLI
 
     def build_multipart(boundary, files)
       parts = []
-      parts << form_field(boundary, "album_title", options[:album]) if options[:album].present?
-      parts << form_field(boundary, "album_id", options[:album_id]) if options[:album_id].present?
+      parts << form_field(boundary, "album_title", options[:album]) if !options[:album].to_s.strip.empty?
+      parts << form_field(boundary, "album_id", options[:album_id]) if !options[:album_id].to_s.strip.empty?
       files.each do |file|
         parts << file_field(boundary, file)
       end
-      parts << "--#{boundary}--\r\n"
-      parts.join
+      parts << "--#{boundary}--\r\n".b
+      parts.inject(+"", :<<)
     end
 
     def form_field(boundary, name, value)
-      "--#{boundary}\r\n" \
+      ("--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"#{name}\"\r\n\r\n" \
-        "#{value}\r\n"
+        "#{value}\r\n").b
     end
 
     def file_field(boundary, file)
       content = file.binread
-      "--#{boundary}\r\n" \
+      header = "--#{boundary}\r\n" \
         "Content-Disposition: form-data; name=\"files[]\"; filename=\"#{file.basename}\"\r\n" \
-        "Content-Type: application/octet-stream\r\n\r\n" \
-        "#{content}\r\n"
+        "Content-Type: application/octet-stream\r\n\r\n"
+      header.b + content + "\r\n".b
     end
 
     def get_json(uri)
@@ -113,7 +123,7 @@ module TsuzuraCLI
 
     def apply_auth!(request)
       token = ENV["TSUZURA_API_TOKEN"].to_s.strip
-      abort "Set TSUZURA_API_TOKEN" if token.blank?
+      abort "Set TSUZURA_API_TOKEN" if token.empty?
 
       request["Authorization"] = "Bearer #{token}"
     end
