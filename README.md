@@ -1,18 +1,19 @@
 # Tsuzura（葛籠）— KBMemo メディア API
 
-`https://media.kbmemo.net` で動作する Rails 8 API-only アプリ。
+`https://media.kbmemo.net` で動作する Rails 8 アプリ（REST API + 最小 Web UI）。
 
 * **Phase 1（完了）:** CLI バッチ登録 + KBMemo 連携（`album::` / `image::media:`）
-* **Phase 2（準備）:** [kbmemo_site/docs/architecture/tsuzura-phase2.adoc](../site/docs/architecture/tsuzura-phase2.adoc) — Web UI・メモ編集ピッカー
+* **Phase 2（完了）:** Web UI + メモ編集ピッカー連携 — [kbmemo_site/docs/architecture/tsuzura-phase2.adoc](../site/docs/architecture/tsuzura-phase2.adoc)
 
 設計: [media-platform.adoc](../site/docs/architecture/media-platform.adoc)
 
 ## Web UI（Phase 2）
 
-ログイン済み（KBMemo と同一 `_kbmemo_session`）で:
+ログイン済み（KBMemo と同一 `_kbmemo_session`、本番は `domain: .kbmemo.net`）で:
 
-* `https://media.kbmemo.net/` — アルバム一覧
-* アルバム詳細 — 複数ファイル upload（`POST /v1/media/batch` と同じ処理）
+* `/` — アルバム一覧
+* `/albums/:id` — 詳細・複数ファイル upload（`POST /v1/media/batch` と同処理）
+* `/albums/new` — アルバム作成
 
 未ログイン時は `KBMEMO_LOGIN_URL`（既定 `http://localhost:3000/login`）へリダイレクト。
 
@@ -25,6 +26,8 @@ bundle install
 bin/rails db:migrate
 PORT=3008 bin/rails server
 ```
+
+`.env` 例: `.env.example`（`KBMEMO_LOGIN_URL` / `KBMEMO_HOME_URL` / `TSUZURA_CORS_ORIGINS`）
 
 ## 本番（systemd）
 
@@ -97,7 +100,7 @@ bin/tsuzura albums list
 bin/tsuzura media show 01JH…
 ```
 
-## API（Phase 1）
+## API
 
 | Method | Path | 用途 |
 |--------|------|------|
@@ -105,6 +108,9 @@ bin/tsuzura media show 01JH…
 | GET | `/v1/media/:id` | メタデータ |
 | GET | `/v1/media/:id/web` | 署名付き画像配信 |
 | GET/POST | `/v1/albums` | アルバム一覧・作成 |
-| GET | `/internal/albums/:id` | KBMemo サーバー向け（`X-Kbmemo-Internal-Secret`） |
+| GET | `/internal/albums` | KBMemo サーバー向け一覧（`owner_account_id` + internal secret） |
+| GET | `/internal/albums/:id` | KBMemo サーバー向け詳細（`X-Kbmemo-Internal-Secret`） |
 
 認証: Rodauth セッション Cookie（`_kbmemo_session`）または `Authorization: Bearer tsuzura_…`
+
+CORS: `/v1/*` に `TSUZURA_CORS_ORIGINS`（既定: kbmemo.net + `localhost:3000`）。メモピッカーは KBMemo の `/internal/tsuzura/*` 経由が主。
