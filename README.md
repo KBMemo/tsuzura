@@ -1,8 +1,11 @@
 # Tsuzura（葛籠）— KBMemo メディア API
 
-`https://media.kbmemo.net` で動作する Rails 8 API-only アプリ。Phase 1: CLI バッチ登録 + KBMemo 連携。
+`https://media.kbmemo.net` で動作する Rails 8 API-only アプリ。
 
-設計: [kbmemo_site/docs/architecture/media-platform.adoc](../site/docs/architecture/media-platform.adoc)
+* **Phase 1（完了）:** CLI バッチ登録 + KBMemo 連携（`album::` / `image::media:`）
+* **Phase 2（準備）:** [kbmemo_site/docs/architecture/tsuzura-phase2.adoc](../site/docs/architecture/tsuzura-phase2.adoc) — Web UI・メモ編集ピッカー
+
+設計: [media-platform.adoc](../site/docs/architecture/media-platform.adoc)
 
 ## 開発
 
