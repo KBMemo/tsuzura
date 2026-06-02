@@ -1,16 +1,22 @@
-# Be sure to restart your server when you modify this file.
+# frozen_string_literal: true
 
-# Avoid CORS issues when API is called from the frontend app.
-# Handle Cross-Origin Resource Sharing (CORS) in order to accept cross-origin Ajax requests.
+# Phase 2: kbmemo.net から media API を credentials 付きで呼ぶ場合に備える。
+Rails.application.config.middleware.insert_before 0, Rack::Cors do
+  allow do
+    origins lambda { |source, _env|
+      next false if source.blank?
 
-# Read more: https://github.com/cyu/rack-cors
+      allowed = ENV.fetch("TSUZURA_CORS_ORIGINS", "https://kbmemo.net,https://www.kbmemo.net,http://localhost:3000")
+        .split(",")
+        .map(&:strip)
+        .reject(&:empty?)
+      allowed.include?(source)
+    }
 
-# Rails.application.config.middleware.insert_before 0, Rack::Cors do
-#   allow do
-#     origins "example.com"
-#
-#     resource "*",
-#       headers: :any,
-#       methods: [:get, :post, :put, :patch, :delete, :options, :head]
-#   end
-# end
+    resource "/v1/*",
+      headers: :any,
+      methods: %i[get post options],
+      credentials: true,
+      max_age: 600
+  end
+end

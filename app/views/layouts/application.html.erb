@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title><%= content_for?(:title) ? yield(:title) : "Tsuzura" %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { margin: 0; padding: 1rem 1.25rem 2rem; line-height: 1.5; max-width: 56rem; }
+      a { color: #2563eb; }
+      header { margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid #ccc; }
+      header h1 { margin: 0; font-size: 1.25rem; }
+      .flash { padding: 0.5rem 0.75rem; margin-bottom: 1rem; border-radius: 0.375rem; }
+      .flash.notice { background: #ecfdf5; color: #065f46; }
+      .flash.alert { background: #fef2f2; color: #991b1b; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #e5e7eb; }
+      .btn { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 0.375rem;
+        border: 1px solid #d1d5db; background: #fff; text-decoration: none; font-size: 0.875rem; cursor: pointer; }
+      .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+      form.inline { display: inline; }
+      .muted { color: #6b7280; font-size: 0.875rem; }
+      ul.thumbs { list-style: none; padding: 0; display: grid; gap: 0.5rem; }
+      ul.thumbs li { font-size: 0.875rem; font-family: ui-monospace, monospace; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1><a href="<%= web_albums_path %>">Tsuzura</a></h1>
+      <p class="muted">KBMemo 写真籠 — <a href="<%= kbmemo_home_url %>" target="_blank" rel="noopener">kbmemo.net</a></p>
+    </header>
+    <% if flash[:notice].present? %>
+      <p class="flash notice"><%= flash[:notice] %></p>
+    <% end %>
+    <% if flash[:alert].present? %>
+      <p class="flash alert"><%= flash[:alert] %></p>
+    <% end %>
+    <%= yield %>
+  </body>
+</html>

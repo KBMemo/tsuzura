@@ -1,0 +1,19 @@
+<% content_for :title, "新しいアルバム — Tsuzura" %>
+
+<p><%= link_to "← 一覧", web_albums_path %></p>
+
+<h2>新しいアルバム</h2>
+
+<%= form_with url: web_albums_path, scope: :album do |f| %>
+  <p>
+    <label for="album_title">タイトル</label><br>
+    <input type="text" name="title" id="album_title" required maxlength="200" style="width: 100%; max-width: 24rem;">
+  </p>
+  <p>
+    <label for="album_description">説明（任意）</label><br>
+    <textarea name="description" id="album_description" rows="3" style="width: 100%; max-width: 24rem;"></textarea>
+  </p>
+  <p>
+    <button type="submit" class="btn btn-primary">作成</button>
+  </p>
+<% end %>

@@ -1,0 +1,25 @@
+<% content_for :title, "#{@album.title} — Tsuzura" %>
+
+<p><%= link_to "← アルバム一覧", web_albums_path %></p>
+
+<h2><%= @album.title %></h2>
+<p class="muted">album::<code><%= @album.id %></code>[]</p>
+
+<h3>写真を追加</h3>
+<%= form_with url: upload_web_album_path(@album), method: :post, multipart: true do %>
+  <p>
+    <input type="file" name="files[]" accept="image/*" multiple required>
+    <button type="submit" class="btn btn-primary">アップロード</button>
+  </p>
+<% end %>
+
+<h3>登録済み（<%= @items.size %> 件）</h3>
+<% if @items.empty? %>
+  <p class="muted">まだ写真がありません。</p>
+<% else %>
+  <ul class="thumbs">
+    <% @items.each do |item| %>
+      <li>image::media:<code><%= item.id %></code>[] — <%= item.original_filename %></li>
+    <% end %>
+  </ul>
+<% end %>

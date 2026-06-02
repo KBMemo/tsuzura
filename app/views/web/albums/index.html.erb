@@ -1,0 +1,28 @@
+<% content_for :title, "アルバム — Tsuzura" %>
+
+<p>
+  <%= link_to "新しいアルバム", new_web_album_path, class: "btn btn-primary" %>
+</p>
+
+<% if @albums.empty? %>
+  <p class="muted">アルバムがありません。作成するか、CLI で import してください。</p>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>タイトル</th>
+        <th>ID</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @albums.each do |album| %>
+        <tr>
+          <td><%= album.title %></td>
+          <td><code><%= album.id %></code></td>
+          <td><%= link_to "開く", web_album_path(album), class: "btn" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

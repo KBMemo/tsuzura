@@ -7,6 +7,15 @@
 
 設計: [media-platform.adoc](../site/docs/architecture/media-platform.adoc)
 
+## Web UI（Phase 2）
+
+ログイン済み（KBMemo と同一 `_kbmemo_session`）で:
+
+* `https://media.kbmemo.net/` — アルバム一覧
+* アルバム詳細 — 複数ファイル upload（`POST /v1/media/batch` と同じ処理）
+
+未ログイン時は `KBMEMO_LOGIN_URL`（既定 `http://localhost:3000/login`）へリダイレクト。
+
 ## 開発
 
 ```bash

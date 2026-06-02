@@ -40,6 +40,9 @@ module KbmemoMedia
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore, key: "_kbmemo_session"
 
-    config.api_only = true
+    # Web UI（Phase 2）用に HTML コントローラを許可
+    config.api_only = false
+
+    config.action_controller.default_protect_from_forgery = true
   end
 end
