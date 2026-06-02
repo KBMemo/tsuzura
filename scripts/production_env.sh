@@ -9,7 +9,7 @@ cd "${APP_ROOT}"
 
 export PATH="${HOME}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH:-}"
 
-export RBENV_ROOT="${HOME}/.rbenv}"
+export RBENV_ROOT="${HOME}/.rbenv"
 if [[ -d "${RBENV_ROOT}/bin" ]]; then
   export PATH="${RBENV_ROOT}/bin:${PATH}"
   eval "$(rbenv init - bash)"
