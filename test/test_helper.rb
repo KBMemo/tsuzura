@@ -20,13 +20,15 @@ module TsuzuraTestData
     Album.create!(owner_account_id: account.id, title: title)
   end
 
-  def create_tsuzura_media_item!(account:, filename: "sample.png")
+  def create_tsuzura_media_item!(account:, filename: "sample.png", content_type: nil)
+    content_type ||= filename.end_with?(".jpg", ".jpeg") ? "image/jpeg" : "image/png"
+    fixture = filename.end_with?(".jpg", ".jpeg") ? "sample.jpg" : "sample.png"
     item = MediaItem.new(owner_account_id: account.id, kind: "image", original_filename: filename)
     item.assign_ulid
     item.file.attach(
-      io: File.open(Rails.root.join("test/fixtures/files/sample.png")),
+      io: File.open(Rails.root.join("test/fixtures/files", fixture)),
       filename: filename,
-      content_type: "image/png"
+      content_type: content_type
     )
     item.save!
     item

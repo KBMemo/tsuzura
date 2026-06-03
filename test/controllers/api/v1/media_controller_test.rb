@@ -64,4 +64,27 @@ class Api::V1::MediaControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :forbidden
   end
+
+  test "update_edits stores stack and enqueues render job" do
+    assert_enqueued_with(job: ApplyEditStackJob) do
+      patch v1_media_edits_path(@item.id),
+        params: { edit_stack: { rotate: 90, crop: { x: 0, y: 0, w: 1, h: 1 } } },
+        headers: tsuzura_auth_headers(@account).merge("Content-Type" => "application/json"),
+        as: :json
+    end
+
+    assert_response :success
+    assert_equal 90, response.parsed_body.dig("edit_stack", "rotate")
+    assert_equal 90, @item.reload.edit_stack["rotate"]
+  end
+
+  test "update_edits forbidden for other account" do
+    other = create_tsuzura_account!
+    patch v1_media_edits_path(@item.id),
+      params: { edit_stack: { rotate: 90 } },
+      headers: tsuzura_auth_headers(other).merge("Content-Type" => "application/json"),
+      as: :json
+
+    assert_response :forbidden
+  end
 end

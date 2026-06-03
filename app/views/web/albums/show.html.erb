@@ -19,7 +19,11 @@
 <% else %>
   <ul class="thumbs">
     <% @items.each do |item| %>
-      <li>image::media:<code><%= item.id %></code>[] — <%= item.original_filename %></li>
+      <li>
+        image::media:<code><%= item.id %></code>[]
+        — <%= item.original_filename %>
+        — <%= link_to "編集", edit_web_medium_path(item) %>
+      </li>
     <% end %>
   </ul>
 <% end %>

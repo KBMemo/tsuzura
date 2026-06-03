@@ -29,11 +29,22 @@ module Api
       end
 
       def show
-        item = MediaItem.find_by_ulid(params[:id])
-        return render json: { error: "not found" }, status: :not_found unless item
-        return render json: { error: "forbidden" }, status: :forbidden unless item.owner_account_id == current_account.id
+        item = find_owned_item
+        return unless item
 
         render json: item_json(item)
+      end
+
+      def update_edits
+        item = find_owned_item
+        return unless item
+
+        stack = Tsuzura::EditStack.normalize(edit_stack_param)
+        item.update!(edit_stack: stack)
+        ApplyEditStackJob.perform_later(item.id)
+        render json: item_json(item)
+      rescue Tsuzura::EditStack::ValidationError => e
+        render json: { error: e.message }, status: :unprocessable_entity
       end
 
       def web
@@ -54,6 +65,26 @@ module Api
       end
 
       private
+
+      def find_owned_item
+        item = MediaItem.find_by_ulid(params[:id])
+        unless item
+          render json: { error: "not found" }, status: :not_found
+          return nil
+        end
+        unless item.owner_account_id == current_account.id
+          render json: { error: "forbidden" }, status: :forbidden
+          return nil
+        end
+
+        item
+      end
+
+      def edit_stack_param
+        params.fetch(:edit_stack, ActionController::Parameters.new)
+          .permit(:rotate, crop: %i[x y w h], blur_regions: %i[x y w h strength])
+          .to_h
+      end
 
       def signed_access_allowed?(item)
         exp = params[:exp]
@@ -80,7 +111,8 @@ module Api
           original_filename: item.original_filename,
           width: item.width,
           height: item.height,
-          captured_at: item.captured_at
+          captured_at: item.captured_at,
+          edit_stack: item.edit_stack
         }
       end
     end

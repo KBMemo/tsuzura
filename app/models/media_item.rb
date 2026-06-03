@@ -19,17 +19,13 @@ class MediaItem < ApplicationRecord
     file.attach(uploaded_file)
     self.original_filename = uploaded_file.original_filename
     self.checksum = file.blob&.checksum
+    self.edit_stack = {} if edit_stack.blank?
     save!
+    generate_web_variant_later
   end
 
   def generate_web_variant!
-    return unless file.attached? && file.content_type.in?(IMAGE_CONTENT_TYPES)
-
-    web.attach(
-      io: StringIO.new(file.download),
-      filename: "web-#{id}.jpg",
-      content_type: "image/jpeg"
-    )
+    Tsuzura::EditStackRenderer.new(self).call
   rescue StandardError => e
     Rails.logger.warn("Tsuzura web variant failed for #{id}: #{e.message}")
   end

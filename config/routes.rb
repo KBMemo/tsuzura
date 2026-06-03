@@ -8,6 +8,11 @@ Rails.application.routes.draw do
         post :upload
       end
     end
+    resources :media, only: %i[edit update], param: :id do
+      member do
+        get :preview
+      end
+    end
   end
 
   scope module: :api do
@@ -15,6 +20,7 @@ Rails.application.routes.draw do
       resources :albums, only: %i[index create show], param: :id
       post "media/batch", to: "media#batch"
       get "media/:id", to: "media#show", as: :media
+      patch "media/:id/edits", to: "media#update_edits", as: :media_edits
       get "media/:id/web", to: "media#web", as: :media_web
     end
   end
