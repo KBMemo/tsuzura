@@ -39,7 +39,23 @@ module Web
     end
 
     def edit_stack_params
-      params.fetch(:edit_stack, {}).permit(:rotate, crop: %i[x y w h], blur_regions: %i[x y w h strength]).to_h
+      permitted = params.fetch(:edit_stack, {}).permit(
+        :rotate,
+        crop: %i[x y w h],
+        blur_regions: %i[x y w h strength]
+      ).to_h
+      merge_default_crop!(permitted)
+      permitted
+    end
+
+    def merge_default_crop!(payload)
+      crop = payload["crop"]
+      return if crop.blank?
+
+      defaults = { "x" => "0", "y" => "0", "w" => "1", "h" => "1" }
+      payload["crop"] = defaults.merge(crop.stringify_keys) do |_key, default, value|
+        value.presence || default
+      end
     end
   end
 end

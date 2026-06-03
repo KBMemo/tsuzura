@@ -65,6 +65,17 @@ class Api::V1::MediaControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "update_edits accepts rotation with blank crop dimensions" do
+    patch v1_media_edits_path(@item.id),
+      params: { edit_stack: { rotate: 90, crop: { x: 0, y: 0, w: "", h: "" } } },
+      headers: tsuzura_auth_headers(@account).merge("Content-Type" => "application/json"),
+      as: :json
+
+    assert_response :success
+    assert_equal 90, @item.reload.edit_stack["rotate"]
+    assert_equal 1, @item.edit_stack.dig("crop", "w")
+  end
+
   test "update_edits stores stack and enqueues render job" do
     assert_enqueued_with(job: ApplyEditStackJob) do
       patch v1_media_edits_path(@item.id),

@@ -1,6 +1,6 @@
 <% content_for :title, "編集 — #{@item.original_filename} — Tsuzura" %>
 <% stack = @item.edit_stack.presence || {} %>
-<% crop = stack["crop"] || { "x" => 0, "y" => 0, "w" => 1, "h" => 1 } %>
+<% crop = { "x" => 0, "y" => 0, "w" => 1, "h" => 1 }.merge((stack["crop"] || {}).stringify_keys.compact_blank) %>
 <% blur_regions = stack["blur_regions"].presence || [] %>
 
 <p><%= link_to "← アルバムへ", web_albums_path %></p>

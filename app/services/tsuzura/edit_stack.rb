@@ -28,18 +28,32 @@ module Tsuzura
         return nil if raw.blank?
 
         h = raw.is_a?(Hash) ? raw.stringify_keys : {}
-        x = clamp01(h["x"])
-        y = clamp01(h["y"])
-        w = clamp01(h["w"])
-        height = clamp01(h["h"])
-        raise ValidationError, "crop width/height must be positive" if w <= 0 || height <= 0
+        return nil unless crop_params_present?(h)
+
+        x = clamp01(h.fetch("x", 0))
+        y = clamp01(h.fetch("y", 0))
+        w = positive_fraction(h["w"], default: 1.0)
+        height = positive_fraction(h["h"], default: 1.0)
         raise ValidationError, "crop exceeds image bounds" if x + w > 1.001 || y + height > 1.001
 
         { "x" => x, "y" => y, "w" => w, "h" => height }
       end
 
+      def crop_params_present?(h)
+        %w[x y w h].any? { |key| h[key].present? }
+      end
+
+      def positive_fraction(value, default:)
+        return default if value.blank?
+
+        parsed = value.to_f
+        raise ValidationError, "crop width/height must be positive" if parsed <= 0
+
+        clamp01(parsed)
+      end
+
       def normalize_blur_regions(raw)
-        list = Array(raw)
+        list = blur_region_entries(raw)
         raise ValidationError, "too many blur_regions" if list.size > MAX_BLUR_REGIONS
 
         list.filter_map do |entry|
@@ -56,6 +70,17 @@ module Tsuzura
           strength = 12 if strength <= 0
           strength = [strength, 64].min
           { "x" => x, "y" => y, "w" => w, "h" => height, "strength" => strength }
+        end
+      end
+
+      def blur_region_entries(raw)
+        case raw
+        when Hash
+          raw.values
+        when Array
+          raw
+        else
+          []
         end
       end
 
