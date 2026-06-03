@@ -19,10 +19,17 @@
 <% else %>
   <ul class="thumbs">
     <% @items.each do |item| %>
-      <li>
-        image::media:<code><%= item.id %></code>[]
-        — <%= item.original_filename %>
-        — <%= link_to "編集", edit_web_medium_path(item) %>
+      <li class="thumb-card">
+        <% if item.web.attached? || item.file.attached? %>
+          <%= link_to edit_web_medium_path(item) do %>
+            <%= image_tag preview_web_medium_path(item), alt: item.original_filename, class: "thumb-img" %>
+          <% end %>
+        <% end %>
+        <div class="thumb-meta">
+          <span class="thumb-filename"><%= item.original_filename %></span>
+          <span class="thumb-macro">image::media:<code><%= item.id %></code>[]</span>
+          <%= link_to "編集", edit_web_medium_path(item), class: "btn" %>
+        </div>
       </li>
     <% end %>
   </ul>

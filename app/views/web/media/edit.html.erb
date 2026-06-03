@@ -1,6 +1,7 @@
 <% content_for :title, "編集 — #{@item.original_filename} — Tsuzura" %>
 <% stack = @item.edit_stack.presence || {} %>
 <% crop = stack["crop"] || { "x" => 0, "y" => 0, "w" => 1, "h" => 1 } %>
+<% blur_regions = stack["blur_regions"].presence || [] %>
 
 <p><%= link_to "← アルバムへ", web_albums_path %></p>
 
@@ -13,7 +14,7 @@
   </p>
 <% end %>
 
-<%= form_with url: web_medium_path(@item), method: :patch, scope: :edit_stack do |f| %>
+<%= form_with url: web_medium_path(@item), method: :patch, scope: :edit_stack, id: "edit-stack-form" do |f| %>
   <fieldset style="border: 0; padding: 0; margin: 0 0 1rem;">
     <legend style="font-weight: 600; margin-bottom: 0.5rem;">回転</legend>
     <label>
@@ -33,7 +34,45 @@
     </div>
   </fieldset>
 
-  <p class="muted" style="font-size: 0.8125rem;">ぼかし矩形は API（`blur_regions`）または次の UI 拡張で追加できます。</p>
+  <fieldset style="border: 0; padding: 0; margin: 0 0 1rem;">
+    <legend style="font-weight: 600; margin-bottom: 0.5rem;">ぼかし矩形（正規化座標 0〜1）</legend>
+    <p class="muted" style="font-size: 0.8125rem; margin-top: 0;">プライバシー保護用。保存後に表示用 JPEG に焼き込みます。</p>
+    <div id="blur-regions" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem;">
+      <% blur_regions.each_with_index do |region, index| %>
+        <%= render "web/media/blur_region_fields", form: f, index: index, region: region %>
+      <% end %>
+    </div>
+    <p style="margin-top: 0.75rem;">
+      <button type="button" class="btn" id="add-blur-region">ぼかし矩形を追加</button>
+    </p>
+  </fieldset>
 
   <%= f.submit "保存", class: "btn btn-primary" %>
 <% end %>
+
+<template id="blur-region-template">
+  <%= render "web/media/blur_region_fields", form: nil, index: "__INDEX__", region: { "x" => 0, "y" => 0, "w" => 0.1, "h" => 0.1, "strength" => 12 } %>
+</template>
+
+<script>
+  (function () {
+    const container = document.getElementById("blur-regions");
+    const template = document.getElementById("blur-region-template");
+    const addBtn = document.getElementById("add-blur-region");
+    if (!container || !template || !addBtn) return;
+
+    const nextIndex = () => container.querySelectorAll("[data-blur-region]").length;
+
+    addBtn.addEventListener("click", () => {
+      const html = template.innerHTML.replaceAll("__INDEX__", String(nextIndex()));
+      container.insertAdjacentHTML("beforeend", html);
+    });
+
+    container.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-remove-blur-region]");
+      if (!btn) return;
+      const row = btn.closest("[data-blur-region]");
+      if (row) row.remove();
+    });
+  })();
+</script>

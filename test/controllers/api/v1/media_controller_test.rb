@@ -78,6 +78,24 @@ class Api::V1::MediaControllerTest < ActionDispatch::IntegrationTest
     assert_equal 90, @item.reload.edit_stack["rotate"]
   end
 
+  test "update_edits stores blur_regions" do
+    patch v1_media_edits_path(@item.id),
+      params: {
+        edit_stack: {
+          rotate: 0,
+          crop: { x: 0, y: 0, w: 1, h: 1 },
+          blur_regions: [{ x: 0.1, y: 0.2, w: 0.15, h: 0.2, strength: 16 }]
+        }
+      },
+      headers: tsuzura_auth_headers(@account).merge("Content-Type" => "application/json"),
+      as: :json
+
+    assert_response :success
+    regions = @item.reload.edit_stack["blur_regions"]
+    assert_equal 1, regions.size
+    assert_equal 16, regions.first["strength"]
+  end
+
   test "update_edits forbidden for other account" do
     other = create_tsuzura_account!
     patch v1_media_edits_path(@item.id),
