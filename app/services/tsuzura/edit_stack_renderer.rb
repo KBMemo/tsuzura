@@ -71,18 +71,49 @@ module Tsuzura
     end
 
     def render_stack(path, stack)
-      pipeline = image_processor.source(path)
+      if vips_available?
+        render_stack_vips(path, stack)
+      else
+        render_stack_magick(path, stack)
+      end
+    end
+
+    def render_stack_vips(path, stack)
+      require "vips"
+      image = Vips::Image.new_from_file(path)
+
+      case stack["rotate"].to_i
+      when 90 then image = image.rot90
+      when 180 then image = image.rot180
+      when 270 then image = image.rot270
+      end
+
+      image = apply_crop_vips(image, stack["crop"]) if stack["crop"]
+      image = apply_blur_regions_vips(image, stack["blur_regions"] || [])
+
+      longest = [image.width, image.height].max
+      if longest > MAX_EDGE
+        scale = MAX_EDGE.to_f / longest
+        image = image.resize(scale)
+      end
+
+      out = Tempfile.new(["tsuzura-web", ".jpg"])
+      image.jpegsave(out.path, Q: JPEG_QUALITY)
+      out
+    end
+
+    def render_stack_magick(path, stack)
+      pipeline = ImageProcessing::MiniMagick.source(path)
       rotate = stack["rotate"].to_i
       pipeline = pipeline.rotate(rotate) if rotate.positive?
 
-      image = open_magick(pipeline.call)
-      crop = stack["crop"]
-      image = apply_crop(image, crop) if crop
+      image = MiniMagick::Image.open(pipeline.call)
+      image = apply_crop_magick(image, stack["crop"]) if stack["crop"]
 
       regions = stack["blur_regions"] || []
-      image = apply_blur_regions(image, regions) if regions.any?
+      image = apply_blur_regions_magick(image, regions) if regions.any?
 
-      image = downscale(image)
+      image = downscale_magick(image)
       out = Tempfile.new(["tsuzura-web", ".jpg"])
       image.format("jpg")
       image.quality(JPEG_QUALITY.to_s)
@@ -90,44 +121,33 @@ module Tsuzura
       out
     end
 
-    def image_processor
-      if vips_available?
-        ImageProcessing::Vips
-      else
-        ImageProcessing::MiniMagick
-      end
-    end
-
     def vips_available?
       self.class.vips_available?
     end
 
-    def open_magick(path)
-      MiniMagick::Image.open(path)
+    def apply_crop_vips(image, crop)
+      x, y, w, h = pixel_rect(crop, image.width, image.height)
+      image.crop(x, y, w, h)
     end
 
-    def apply_crop(image, crop)
-      width = image.width
-      height = image.height
-      x = (crop["x"] * width).round
-      y = (crop["y"] * height).round
-      w = [ (crop["w"] * width).round, 1 ].max
-      h = [ (crop["h"] * height).round, 1 ].max
-      w = [w, width - x].min
-      h = [h, height - y].min
+    def apply_blur_regions_vips(image, regions)
+      regions.each do |region|
+        x, y, w, h = pixel_rect(region, image.width, image.height)
+        patch = image.crop(x, y, w, h)
+        blurred = patch.gaussblur(region["strength"].to_f)
+        image = image.insert(blurred, x, y)
+      end
+      image
+    end
+
+    def apply_crop_magick(image, crop)
+      x, y, w, h = pixel_rect(crop, image.width, image.height)
       image.crop("#{w}x#{h}+#{x}+#{y}")
     end
 
-    def apply_blur_regions(image, regions)
-      width = image.width
-      height = image.height
+    def apply_blur_regions_magick(image, regions)
       regions.each do |region|
-        x = (region["x"] * width).round
-        y = (region["y"] * height).round
-        w = [ (region["w"] * width).round, 1 ].max
-        h = [ (region["h"] * height).round, 1 ].max
-        w = [w, width - x].min
-        h = [h, height - y].min
+        x, y, w, h = pixel_rect(region, image.width, image.height)
         strength = region["strength"]
         patch = image.dup.crop("#{w}x#{h}+#{x}+#{y}")
         patch.blur("0x#{strength}")
@@ -136,7 +156,17 @@ module Tsuzura
       image
     end
 
-    def downscale(image)
+    def pixel_rect(rect, width, height)
+      x = (rect["x"] * width).round
+      y = (rect["y"] * height).round
+      w = [ (rect["w"] * width).round, 1 ].max
+      h = [ (rect["h"] * height).round, 1 ].max
+      w = [w, width - x].min
+      h = [h, height - y].min
+      [x, y, w, h]
+    end
+
+    def downscale_magick(image)
       longest = [image.width, image.height].max
       return image if longest <= MAX_EDGE
 
@@ -154,8 +184,13 @@ module Tsuzura
     end
 
     def update_dimensions!(path)
-      image = MiniMagick::Image.open(path)
-      @item.update!(width: image.width, height: image.height)
+      if vips_available?
+        image = Vips::Image.new_from_file(path)
+        @item.update!(width: image.width, height: image.height)
+      else
+        image = MiniMagick::Image.open(path)
+        @item.update!(width: image.width, height: image.height)
+      end
     end
   end
 end
