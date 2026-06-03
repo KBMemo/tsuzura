@@ -10,7 +10,12 @@ module Tsuzura
       end
 
       def base_url
-        ENV.fetch("TSUZURA_PUBLIC_URL", "http://localhost:3008")
+        explicit = ENV["TSUZURA_PUBLIC_URL"].presence
+        return explicit.to_s.strip.chomp("/") if explicit.present?
+
+        return "http://localhost:3008" if Rails.env.development? || Rails.env.test?
+
+        "https://media.kbmemo.net"
       end
 
       def sign(media_id:, memo_id:, exp: 1.hour.from_now)
