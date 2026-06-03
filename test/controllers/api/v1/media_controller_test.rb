@@ -10,8 +10,8 @@ class Api::V1::MediaControllerTest < ActionDispatch::IntegrationTest
 
   test "batch upload returns album items and asciidoc" do
     upload = Rack::Test::UploadedFile.new(
-      Rails.root.join("test/fixtures/files/sample.png"),
-      "image/png"
+      Rails.root.join("test/fixtures/files/sample.jpg"),
+      "image/jpeg"
     )
 
     assert_difference -> { MediaItem.count }, 1 do
@@ -26,6 +26,60 @@ class Api::V1::MediaControllerTest < ActionDispatch::IntegrationTest
     assert body["items"].one?
     assert_includes body["asciidoc"], "album::"
     assert_includes body["asciidoc"], "image::media:"
+  end
+
+  test "lookup returns item by checksum for owner" do
+    @item.reload
+    assert @item.checksum.present?
+
+    get v1_media_lookup_path,
+      params: { checksum: @item.checksum },
+      headers: tsuzura_auth_headers(@account)
+
+    assert_response :success
+    assert_equal @item.id, response.parsed_body.dig("item", "id")
+  end
+
+  test "lookup returns null when checksum unknown" do
+    get v1_media_lookup_path,
+      params: { checksum: "unknown-checksum" },
+      headers: tsuzura_auth_headers(@account)
+
+    assert_response :success
+    assert_nil response.parsed_body["item"]
+  end
+
+  test "batch reuses checksum and links to second album" do
+    album_a = create_tsuzura_album!(account: @account, title: "A")
+    upload = Rack::Test::UploadedFile.new(
+      Rails.root.join("test/fixtures/files/sample.png"),
+      "image/png"
+    )
+
+    post v1_media_batch_path,
+      params: { album_id: album_a.id, files: [ upload ] },
+      headers: tsuzura_auth_headers(@account)
+    assert_response :created
+    item_id = response.parsed_body.dig("items", 0, "id")
+    checksum = response.parsed_body.dig("items", 0, "checksum")
+
+    album_b = create_tsuzura_album!(account: @account, title: "B")
+    assert_no_difference -> { MediaItem.count } do
+      post v1_media_batch_path,
+        params: { album_ids: [ album_b.id ], files: [ Rack::Test::UploadedFile.new(
+          Rails.root.join("test/fixtures/files/sample.png"),
+          "image/png"
+        ) ] },
+        headers: tsuzura_auth_headers(@account)
+    end
+
+    assert_response :created
+    body = response.parsed_body
+    assert_equal 0, body.dig("stats", "created")
+    assert_equal 1, body.dig("stats", "linked")
+    assert_equal item_id, body.dig("items", 0, "id")
+    assert_equal checksum, body.dig("items", 0, "checksum")
+    assert_equal 2, MediaItem.find(item_id).album_items.count
   end
 
   test "batch upload requires bearer token" do

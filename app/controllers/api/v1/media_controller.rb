@@ -14,18 +14,34 @@ module Api
         result = Tsuzura::BatchImport.new(
           account: current_account,
           album_title: params[:album_title],
-          album_id: params[:album_id]
+          album_id: params[:album_id],
+          album_ids: batch_album_ids_param
         ).call(uploads: uploads)
 
         album = result[:album]
         items = result[:items]
         render json: {
           album: album_json(album),
+          albums: result[:albums].map { |a| album_json(a) },
           items: items.map { |item| item_json(item) },
+          stats: batch_stats(result),
           asciidoc: Tsuzura::AsciidocFragments.for_batch(album: album, items: items)
         }, status: :created
       rescue ActiveRecord::RecordNotFound
         render json: { error: "album not found" }, status: :not_found
+      end
+
+      def lookup
+        checksum = params[:checksum].to_s.strip
+        if checksum.blank?
+          return render json: { error: "checksum required" }, status: :unprocessable_entity
+        end
+
+        item = MediaItem.find_owned_by_checksum(
+          owner_account_id: current_account.id,
+          checksum: checksum
+        )
+        render json: { item: item ? item_json(item) : nil }
       end
 
       def show
@@ -104,11 +120,26 @@ module Api
         { id: album.id, title: album.title }
       end
 
+      def batch_album_ids_param
+        ids = Array(params[:album_ids])
+        ids.concat(Array(params[:"album_ids[]"])) if params[:"album_ids[]"].present?
+        ids
+      end
+
+      def batch_stats(result)
+        {
+          total: result[:items].size,
+          created: result[:created_items].size,
+          linked: result[:linked_items].size
+        }
+      end
+
       def item_json(item)
         {
           id: item.id,
           kind: item.kind,
           original_filename: item.original_filename,
+          checksum: item.checksum,
           width: item.width,
           height: item.height,
           captured_at: item.captured_at,

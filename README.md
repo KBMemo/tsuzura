@@ -104,7 +104,8 @@ bin/tsuzura media show 01JH…
 
 | Method | Path | 用途 |
 |--------|------|------|
-| POST | `/v1/media/batch` | 一括アップロード |
+| POST | `/v1/media/batch` | 一括アップロード（checksum 重複は再利用、`album_ids[]` で複数アルバムへリンク） |
+| GET | `/v1/media/lookup?checksum=` | オーナー内の既存メディア照会（watch 取り込み用） |
 | GET | `/v1/media/:id` | メタデータ |
 | GET | `/v1/media/:id/web` | 署名付き画像配信 |
 | GET/POST | `/v1/albums` | アルバム一覧・作成 |

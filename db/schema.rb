@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_03_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -265,6 +265,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_140000) do
     t.datetime "updated_at", null: false
     t.integer "width"
     t.index ["checksum"], name: "index_tsuzura_media_items_on_checksum"
+    t.index ["owner_account_id", "checksum"], name: "index_tsuzura_media_items_on_owner_account_id_and_checksum"
     t.index ["owner_account_id"], name: "index_tsuzura_media_items_on_owner_account_id"
   end
 

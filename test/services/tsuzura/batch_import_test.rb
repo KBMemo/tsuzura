@@ -29,6 +29,36 @@ class Tsuzura::BatchImportTest < ActiveSupport::TestCase
     end
   end
 
+  test "reuses existing media item by checksum without creating duplicate" do
+    upload = sample_upload
+    first = Tsuzura::BatchImport.new(account: @account, album_title: "First").call(uploads: [ upload ])
+    item_id = first[:items].first.id
+
+    assert_no_difference -> { MediaItem.count } do
+      second = Tsuzura::BatchImport.new(account: @account, album_title: "Second").call(uploads: [ sample_upload ])
+      assert_equal item_id, second[:items].first.id
+      assert_empty second[:created_items]
+      assert_includes second[:linked_items].map(&:id), item_id
+    end
+
+    assert_equal 2, MediaItem.find(item_id).album_items.count
+  end
+
+  test "links to multiple albums in one batch" do
+    album_a = create_tsuzura_album!(account: @account, title: "A")
+    album_b = create_tsuzura_album!(account: @account, title: "B")
+    upload = sample_upload
+
+    result = Tsuzura::BatchImport.new(
+      account: @account,
+      album_ids: [ album_a.id, album_b.id ]
+    ).call(uploads: [ upload ])
+
+    assert_equal 2, result[:albums].size
+    assert_equal 1, result[:items].size
+    assert_equal 2, result[:items].first.album_items.count
+  end
+
   test "rejects album owned by another account" do
     other_album = create_tsuzura_album!(account: create_tsuzura_account!, title: "Other")
     upload = sample_upload

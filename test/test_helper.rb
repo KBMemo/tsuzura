@@ -30,6 +30,7 @@ module TsuzuraTestData
       filename: filename,
       content_type: content_type
     )
+    item.checksum = item.file.blob&.checksum
     item.save!
     item
   end
