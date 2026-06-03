@@ -13,9 +13,7 @@ module Api
 
         result = Tsuzura::BatchImport.new(
           account: current_account,
-          album_title: params[:album_title],
-          album_id: params[:album_id],
-          album_ids: batch_album_ids_param
+          **import_targeting_options
         ).call(uploads: uploads)
 
         album = result[:album]
@@ -27,6 +25,25 @@ module Api
           stats: batch_stats(result),
           asciidoc: Tsuzura::AsciidocFragments.for_batch(album: album, items: items)
         }, status: :created
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "album not found" }, status: :not_found
+      end
+
+      def sync_albums
+        targeting = import_targeting
+        unless import_targeting_valid?(targeting)
+          return render json: { error: "album_title, album_id, album_ids, or auto_date_albums required" },
+            status: :unprocessable_entity
+        end
+
+        result = Tsuzura::MediaAlbumSync.new(
+          account: current_account,
+          targeting: targeting,
+          refresh_metadata: !ActiveModel::Type::Boolean.new.cast(params[:skip_metadata_refresh]),
+          prune_date_albums: !ActiveModel::Type::Boolean.new.cast(params[:skip_prune])
+        ).call(media_ids: sync_media_ids_param)
+
+        render json: { stats: result }
       rescue ActiveRecord::RecordNotFound
         render json: { error: "album not found" }, status: :not_found
       end
@@ -120,6 +137,32 @@ module Api
         { id: album.id, title: album.title }
       end
 
+      def import_targeting
+        Tsuzura::ImportTargeting.new(account: current_account, **import_targeting_options)
+      end
+
+      def import_targeting_options
+        {
+          album_title: params[:album_title],
+          album_id: params[:album_id],
+          album_ids: batch_album_ids_param,
+          auto_date_albums: params[:auto_date_albums],
+          inbox_album_title: params[:inbox_album_title],
+          date_album_format: params[:date_album_format]
+        }
+      end
+
+      def import_targeting_valid?(targeting)
+        targeting.auto_date_albums ||
+          params[:album_title].present? ||
+          params[:album_id].present? ||
+          batch_album_ids_param.any?
+      end
+
+      def sync_media_ids_param
+        Array(params[:media_ids]).concat(Array(params[:"media_ids[]"]))
+      end
+
       def batch_album_ids_param
         ids = Array(params[:album_ids])
         ids.concat(Array(params[:"album_ids[]"])) if params[:"album_ids[]"].present?
@@ -135,16 +178,28 @@ module Api
       end
 
       def item_json(item)
-        {
+        payload = {
           id: item.id,
           kind: item.kind,
           original_filename: item.original_filename,
           checksum: item.checksum,
           width: item.width,
           height: item.height,
-          captured_at: item.captured_at,
+          captured_at: item.captured_at&.iso8601,
+          file_mtime: item.file_mtime&.iso8601,
+          exif_captured_at: item.exif_captured_at&.iso8601,
+          exif: item.exif,
           edit_stack: item.edit_stack
         }
+        location = location_json(item)
+        payload[:location] = location if location
+        payload
+      end
+
+      def location_json(item)
+        return nil if item.latitude.blank? || item.longitude.blank?
+
+        { latitude: item.latitude.to_f, longitude: item.longitude.to_f }
       end
     end
   end

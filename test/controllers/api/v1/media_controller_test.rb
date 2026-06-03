@@ -49,6 +49,28 @@ class Api::V1::MediaControllerTest < ActionDispatch::IntegrationTest
     assert_nil response.parsed_body["item"]
   end
 
+  test "batch auto_date_albums creates inbox and date albums" do
+    upload = Rack::Test::UploadedFile.new(
+      Rails.root.join("test/fixtures/files/sample.jpg"),
+      "image/jpeg"
+    )
+
+    post v1_media_batch_path,
+      params: { auto_date_albums: true, files: [ upload ] },
+      headers: tsuzura_auth_headers(@account)
+
+    assert_response :created
+    body = response.parsed_body
+    titles = body.fetch("albums").map { |a| a["title"] }
+    item = body.dig("items", 0)
+    assert item["file_mtime"].present?
+    assert item["captured_at"].present?
+    assert_includes titles, "Camera Upload"
+    if item["exif_captured_at"].present?
+      assert_includes titles, Time.zone.parse(item["exif_captured_at"]).strftime("%Y-%m-%d")
+    end
+  end
+
   test "batch reuses checksum and links to second album" do
     album_a = create_tsuzura_album!(account: @account, title: "A")
     upload = Rack::Test::UploadedFile.new(

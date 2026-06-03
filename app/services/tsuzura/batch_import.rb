@@ -2,21 +2,37 @@
 
 module Tsuzura
   class BatchImport
-    def initialize(account:, album_title: nil, album_id: nil, album_ids: nil)
+    def initialize(
+      account:,
+      album_title: nil,
+      album_id: nil,
+      album_ids: nil,
+      auto_date_albums: false,
+      inbox_album_title: nil,
+      date_album_format: nil
+    )
       @account = account
-      @album_title = album_title.to_s.strip.presence
-      @album_id = Album.normalize_ulid(album_id)
-      @album_ids = normalize_album_ids(album_ids)
+      @targeting = ImportTargeting.new(
+        account: account,
+        album_title: album_title,
+        album_id: album_id,
+        album_ids: album_ids,
+        auto_date_albums: auto_date_albums,
+        inbox_album_title: inbox_album_title,
+        date_album_format: date_album_format
+      )
     end
 
     def call(uploads:)
-      albums = resolve_target_albums!
       items = []
       created_items = []
       linked_items = []
+      albums_seen = []
 
       uploads.each do |upload|
         item, created = find_or_create_item!(upload)
+        albums = @targeting.albums_for_item(item)
+        albums_seen.concat(albums)
         link_result = AlbumLinker.new(albums: albums).link!(item)
 
         items << item
@@ -27,6 +43,7 @@ module Tsuzura
         end
       end
 
+      albums = albums_seen.uniq
       {
         albums: albums,
         album: albums.first,
@@ -38,34 +55,13 @@ module Tsuzura
 
     private
 
-    def normalize_album_ids(raw)
-      list = Array(raw).flat_map { |entry| entry.to_s.split(",") }
-      ids = list.map { |id| Album.normalize_ulid(id) }.compact
-      ids << @album_id if @album_id.present?
-      ids.uniq
-    end
-
-    def resolve_target_albums!
-      if @album_ids.any?
-        return @album_ids.map { |id| find_owned_album!(id) }
-      end
-
-      title = @album_title.presence || "Import #{Time.current.strftime('%Y-%m-%d %H:%M')}"
-      [ Album.create!(owner_account_id: @account.id, title: title) ]
-    end
-
-    def find_owned_album!(ulid)
-      album = Album.find_by_ulid(ulid)
-      raise ActiveRecord::RecordNotFound, "album not found" unless album
-      raise ActiveRecord::RecordNotFound, "album forbidden" unless album.owner_account_id == @account.id
-
-      album
-    end
-
     def find_or_create_item!(upload)
       checksum = UploadChecksum.from_upload(upload)
       existing = MediaItem.find_owned_by_checksum(owner_account_id: @account.id, checksum: checksum)
-      return [ existing, false ] if existing
+      if existing
+        backfill_metadata!(existing, upload)
+        return [ existing, false ]
+      end
 
       item = MediaItem.new(owner_account_id: @account.id, kind: "image")
       item.assign_ulid
@@ -73,5 +69,8 @@ module Tsuzura
       [ item, true ]
     end
 
+    def backfill_metadata!(item, upload)
+      MediaMetadata.apply_from_upload!(item, upload)
+    end
   end
 end

@@ -59,6 +59,86 @@ class Tsuzura::BatchImportTest < ActiveSupport::TestCase
     assert_equal 2, result[:items].first.album_items.count
   end
 
+  test "auto_date_albums links inbox only when exif capture date is absent" do
+    path = Rails.root.join("test/fixtures/files/sample.jpg")
+    mtime = Time.zone.parse("2026-06-02 09:00:00")
+    upload = Rack::Test::UploadedFile.new(path, "image/jpeg")
+    utime_file(upload.path, mtime)
+
+    result = Tsuzura::BatchImport.new(account: @account, auto_date_albums: true).call(uploads: [ upload ])
+
+    titles = result[:albums].map(&:title).sort
+    assert_equal [ "Camera Upload" ], titles
+    assert_equal 1, result[:items].first.album_items.count
+    item = result[:items].first
+    assert_nil item.exif_captured_at
+    assert_equal mtime, item.file_mtime
+    assert_equal mtime, item.captured_at
+  end
+
+  test "auto_date_albums adds date album when exif_captured_at is present" do
+    upload = sample_upload
+    exif_time = Time.zone.parse("2026-03-10 15:30:00")
+
+    metadata_singleton = class << Tsuzura::MediaMetadata; self; end
+    original = metadata_singleton.instance_method(:apply_from_upload!)
+    metadata_singleton.define_method(:apply_from_upload!) do |item, _upload|
+      item.assign_attributes(
+        exif_captured_at: exif_time,
+        file_mtime: exif_time,
+        captured_at: exif_time,
+        exif: { "DateTimeOriginal" => "2026:03:10 15:30:00" }
+      )
+      item.save! if item.changed?
+      item
+    end
+
+    result = Tsuzura::BatchImport.new(account: @account, auto_date_albums: true).call(uploads: [ upload ])
+    titles = result[:albums].map(&:title).sort
+    assert_equal [ "2026-03-10", "Camera Upload" ], titles
+  ensure
+    metadata_singleton.define_method(:apply_from_upload!, original)
+  end
+
+  test "auto_date_albums adds album_title without date album when no exif date" do
+    upload = sample_upload
+
+    result = Tsuzura::BatchImport.new(
+      account: @account,
+      auto_date_albums: true,
+      album_title: "Trip 2026"
+    ).call(uploads: [ upload ])
+
+    titles = result[:albums].map(&:title).sort
+    assert_equal [ "Camera Upload", "Trip 2026" ], titles
+    assert_equal 2, result[:items].first.album_items.count
+
+    assert_no_difference -> { Album.where(title: "Trip 2026").count } do
+      Tsuzura::BatchImport.new(
+        account: @account,
+        auto_date_albums: true,
+        album_title: "Trip 2026"
+      ).call(uploads: [ sample_upload ])
+    end
+  end
+
+  test "auto_date_albums adds explicit album_ids alongside inbox and date" do
+    extra = create_tsuzura_album!(account: @account, title: "Trip 2026")
+    path = Rails.root.join("test/fixtures/files/sample.jpg")
+    mtime = Time.zone.parse("2026-06-04 11:00:00")
+    upload = Rack::Test::UploadedFile.new(path, "image/jpeg")
+    utime_file(upload.path, mtime)
+
+    result = Tsuzura::BatchImport.new(
+      account: @account,
+      auto_date_albums: true,
+      album_ids: [ extra.id ]
+    ).call(uploads: [ upload ])
+
+    assert_equal 2, result[:albums].size
+    assert_equal 2, result[:items].first.album_items.count
+  end
+
   test "rejects album owned by another account" do
     other_album = create_tsuzura_album!(account: create_tsuzura_account!, title: "Other")
     upload = sample_upload

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_04_210221) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -258,8 +258,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_04_120000) do
     t.datetime "created_at", null: false
     t.jsonb "edit_stack", default: {}, null: false
     t.jsonb "exif", default: {}, null: false
+    t.datetime "exif_captured_at"
+    t.datetime "file_mtime"
     t.integer "height"
     t.string "kind", default: "image", null: false
+    t.decimal "latitude", precision: 10, scale: 7
+    t.decimal "longitude", precision: 10, scale: 7
     t.string "original_filename"
     t.bigint "owner_account_id", null: false
     t.datetime "updated_at", null: false

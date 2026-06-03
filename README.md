@@ -96,6 +96,11 @@ export TSUZURA_BASE_URL=http://localhost:3008
 export TSUZURA_API_TOKEN=tsuzura_…   # KBMemo プロフィールで発行
 
 bin/tsuzura import --album "2024 夏" ./photos/
+bin/tsuzura import --auto-date-albums -a "Trip 2026" ~/Dropbox/Camera\ Upload/  # manifest にオプション保存
+bin/tsuzura import ~/Dropbox/Camera\ Upload/   # 2 回目以降はディレクトリだけで同設定
+bin/tsuzura sync-albums ~/Dropbox/Camera\ Upload/   # 登録済み写真の振り分け直し
+bin/tsuzura watch run --auto-date-albums ~/Dropbox/Camera\ Upload/
+bin/tsuzura manifest show ~/Dropbox/Camera\ Upload/
 bin/tsuzura albums list
 bin/tsuzura media show 01JH…
 ```
@@ -104,7 +109,7 @@ bin/tsuzura media show 01JH…
 
 | Method | Path | 用途 |
 |--------|------|------|
-| POST | `/v1/media/batch` | 一括アップロード（checksum 重複は再利用、`album_ids[]` で複数アルバムへリンク） |
+| POST | `/v1/media/batch` | 一括アップロード（checksum 重複は再利用、`album_ids[]`、`auto_date_albums` でインボックス+日付アルバム） |
 | GET | `/v1/media/lookup?checksum=` | オーナー内の既存メディア照会（watch 取り込み用） |
 | GET | `/v1/media/:id` | メタデータ |
 | GET | `/v1/media/:id/web` | 署名付き画像配信 |

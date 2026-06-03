@@ -34,6 +34,7 @@ class MediaItem < ApplicationRecord
     self.checksum = file.blob&.checksum
     self.edit_stack = {} if edit_stack.blank?
     save!
+    Tsuzura::MediaMetadata.apply_from_upload!(self, uploaded_file)
     generate_web_variant_later
   end
 

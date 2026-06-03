@@ -11,6 +11,7 @@ gem "bootsnap", require: false
 gem "kamal", require: false
 gem "thruster", require: false
 gem "image_processing", "~> 1.2"
+gem "exifr", require: false
 gem "ruby-ulid", "~> 1.0", require: "ulid"
 gem "rodauth-rails", "~> 2.1"
 gem "sequel-activerecord_connection", "~> 2.0", require: false

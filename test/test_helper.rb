@@ -20,6 +20,12 @@ module TsuzuraTestData
     Album.create!(owner_account_id: account.id, title: title)
   end
 
+  def utime_file(path, time)
+    t = time.in_time_zone
+    atime = Time.at(t.to_i).utc
+    File.utime(atime, atime, path)
+  end
+
   def create_tsuzura_media_item!(account:, filename: "sample.png", content_type: nil)
     content_type ||= filename.end_with?(".jpg", ".jpeg") ? "image/jpeg" : "image/png"
     fixture = filename.end_with?(".jpg", ".jpeg") ? "sample.jpg" : "sample.png"
