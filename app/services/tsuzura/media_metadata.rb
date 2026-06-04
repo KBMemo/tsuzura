@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "base64"
 require "exifr/jpeg"
 
 module Tsuzura
@@ -86,7 +87,8 @@ module Tsuzura
           jpeg = EXIFR::JPEG.new(path)
           return {} unless jpeg.exif
 
-          jpeg.exif.to_hash.transform_keys(&:to_s).transform_values { |v| serialize_exif_value(v) }
+          raw = jpeg.exif.to_hash.transform_keys(&:to_s).transform_values { |v| serialize_exif_value(v) }
+          sanitize_exif_hash(raw)
         else
           {}
         end
@@ -117,9 +119,55 @@ module Tsuzura
           value.iso8601
         when Rational
           value.to_f
+        when Hash
+          sanitize_exif_hash(value.transform_keys(&:to_s).transform_values { |v| serialize_exif_value(v) })
+        when Array
+          value.filter_map { |entry| sanitize_exif_value(entry) }
+        when String, Symbol
+          sanitize_json_string(value.to_s)
         else
           value
         end
+      end
+
+      def sanitize_exif_hash(hash)
+        hash.each_with_object({}) do |(key, value), out|
+          safe_key = sanitize_json_string(key.to_s)
+          next if safe_key.blank?
+
+          safe_value = sanitize_exif_value(value)
+          next if safe_value.nil?
+
+          out[safe_key] = safe_value
+        end
+      end
+
+      def sanitize_exif_value(value)
+        case value
+        when Hash
+          sanitize_exif_hash(value)
+        when Array
+          value.filter_map { |entry| sanitize_exif_value(entry) }
+        when String, Symbol
+          sanitize_json_string(value.to_s)
+        when Numeric, TrueClass, FalseClass
+          value
+        else
+          text = serialize_exif_value(value)
+          text.is_a?(String) ? sanitize_json_string(text) : text
+        end
+      end
+
+      # PostgreSQL jsonb は U+0000 を含む文字列を拒否する。バイナリ EXIF 値は Base64 にする。
+      def sanitize_json_string(str)
+        raw = str.to_s.dup.force_encoding(Encoding::BINARY)
+        raw = raw.delete("\0")
+        return "" if raw.empty?
+
+        utf8 = raw.dup.force_encoding(Encoding::UTF_8)
+        return utf8 if utf8.valid_encoding?
+
+        Base64.strict_encode64(raw)
       end
 
       def capture_time_from_exif(exif_hash)

@@ -27,6 +27,18 @@ class Tsuzura::MediaMetadataTest < ActiveSupport::TestCase
     assert_nil item.longitude
   end
 
+  test "sanitize_exif_hash strips null bytes for jsonb storage" do
+    raw = {
+      "gps_version_id" => "\x02\x02\u0000",
+      "make" => "Canon\u0000"
+    }
+    safe = Tsuzura::MediaMetadata.send(:sanitize_exif_hash, raw)
+
+    assert_not_includes safe.to_json, "\\u0000"
+    assert_equal "Canon", safe["make"]
+    assert safe["gps_version_id"].present?
+  end
+
   test "apply_from_upload records file_mtime on attach" do
     account = create_tsuzura_account!
     path = Rails.root.join("test/fixtures/files/sample.jpg")

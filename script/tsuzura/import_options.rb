@@ -54,12 +54,12 @@ module TsuzuraCLI
       end
 
       def append_multipart_fields(parts, boundary, config)
-        config = normalize_stored(config)
-        parts << field(parts, boundary, "album_title", config["album_title"]) if config["album_title"]
-        parts << field(parts, boundary, "album_id", config["album_id"]) if config["album_id"]
-        parts << field(parts, boundary, "auto_date_albums", "true") if config["auto_date_albums"]
-        parts << field(parts, boundary, "inbox_album_title", config["inbox_album_title"]) if config["inbox_album_title"]
-        parts << field(parts, boundary, "date_album_format", config["date_album_format"]) if config["date_album_format"]
+        config = normalize(config)
+        parts << form_field(boundary, "album_title", config["album_title"]) if config["album_title"]
+        parts << form_field(boundary, "album_id", config["album_id"]) if config["album_id"]
+        parts << form_field(boundary, "auto_date_albums", "true") if config["auto_date_albums"]
+        parts << form_field(boundary, "inbox_album_title", config["inbox_album_title"]) if config["inbox_album_title"]
+        parts << form_field(boundary, "date_album_format", config["date_album_format"]) if config["date_album_format"]
         parts
       end
 
@@ -74,10 +74,6 @@ module TsuzuraCLI
       def blank(value)
         text = value.to_s.strip
         text.empty? ? nil : text
-      end
-
-      def field(parts, boundary, name, value)
-        parts << form_field(boundary, name, value)
       end
 
       def form_field(boundary, name, value)

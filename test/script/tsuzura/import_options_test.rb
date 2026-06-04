@@ -24,6 +24,20 @@ class ImportOptionsMergeTest < Minitest::Test
     assert_equal "New", merged["album_title"]
   end
 
+  def test_append_multipart_fields_builds_binary_strings
+    parts = []
+    TsuzuraCLI::ImportOptions.append_multipart_fields(
+      parts,
+      "boundary",
+      { "album_title" => "Album", "auto_date_albums" => true }
+    )
+    parts << "--boundary--\r\n".b
+
+    body = parts.inject(+"", :<<)
+    assert_kind_of String, body
+    assert parts.all? { |part| part.is_a?(String) }
+  end
+
   def test_valid_detects_target_album_configuration
     refute TsuzuraCLI::ImportOptions.valid?({})
     assert TsuzuraCLI::ImportOptions.valid?({ "auto_date_albums" => true })
