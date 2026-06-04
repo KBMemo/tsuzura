@@ -15,6 +15,10 @@ require_relative "tsuzura/watch_manifest"
 module TsuzuraCLI
   IMAGE_SUFFIXES = %w[.jpg .jpeg .png .gif .webp .heic .heif].freeze
 
+  def self.present?(value)
+    !value.to_s.strip.empty?
+  end
+
   class Main < Thor
     package_name "tsuzura"
 
@@ -28,7 +32,7 @@ module TsuzuraCLI
     option :manifest_file, type: :string, desc: "Explicit manifest JSON path (overrides default under TSUZURA_MANIFEST_DIR)"
     def import(*paths)
       response = ImportRunner.new(cli: self, paths: paths, options: options).run
-      puts response.fetch("asciidoc") if response.fetch("asciidoc").present?
+      print_asciidoc_response(response)
     end
 
     desc "sync-albums [PATH]", "Re-link existing media (refresh EXIF; same rules as import; uses manifest import options when PATH given)"
@@ -40,7 +44,7 @@ module TsuzuraCLI
     option :manifest_root, type: :string, desc: "Watch root for manifest"
     option :manifest_file, type: :string, desc: "Explicit manifest JSON path"
     def sync_albums(path = nil)
-      paths = path.present? ? [ path ] : []
+      paths = TsuzuraCLI.present?(path) ? [ path ] : []
       stats = SyncAlbumsRunner.new(cli: self, paths: paths, options: options).run
       puts JSON.pretty_generate(stats)
     end
@@ -57,13 +61,13 @@ module TsuzuraCLI
       abort "Usage: tsuzura watch run PATH..." unless cmd == "run"
 
       response = ImportRunner.new(cli: self, paths: paths, options: options).run
-      puts response.fetch("asciidoc") if response.fetch("asciidoc").present?
+      print_asciidoc_response(response)
     end
 
     desc "manifest show PATH", "Print manifest path and entry count for a watch root"
     option :manifest_file, type: :string, desc: "Explicit manifest JSON path"
     def manifest(action, path = nil)
-      abort "Usage: tsuzura manifest show PATH" unless action == "show" && path.present?
+      abort "Usage: tsuzura manifest show PATH" unless action == "show" && TsuzuraCLI.present?(path)
 
       root = File.expand_path(path)
       root = File.dirname(root) unless File.directory?(root)
@@ -98,6 +102,11 @@ module TsuzuraCLI
     default_task :help
 
     no_commands do
+      def print_asciidoc_response(response)
+        text = response.fetch("asciidoc", "").to_s
+        puts text if TsuzuraCLI.present?(text)
+      end
+
       def expand_paths(paths)
         paths.flat_map { |path| expand_path(path) }.uniq.sort_by(&:to_s)
       end
