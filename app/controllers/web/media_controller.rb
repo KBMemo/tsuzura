@@ -8,7 +8,7 @@ module Web
 
     def preview
       @item = find_owned_item!
-      attachment = @item.web.attached? ? @item.web : @item.file
+      attachment = preview_attachment_for(@item)
       return head :not_found unless attachment.attached?
 
       send_data attachment.download,
@@ -36,6 +36,12 @@ module Web
       raise ActiveRecord::RecordNotFound unless item.owner_account_id == current_account.id
 
       item
+    end
+
+    def preview_attachment_for(item)
+      return item.file if params[:source].to_s == "original"
+
+      item.web.attached? ? item.web : item.file
     end
 
     def edit_stack_params

@@ -33,3 +33,8 @@
 /config/*.key
 /config/credentials.yml.enc
 
+# JavaScript dependencies and Vite build output.
+/node_modules
+/public/vite
+/public/vite-dev
+/public/vite-test

@@ -18,6 +18,7 @@ gem "sequel-activerecord_connection", "~> 2.0", require: false
 gem "bcrypt", "~> 3.1"
 gem "thor", "~> 1.3"
 gem "rack-cors"
+gem "vite_rails"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
