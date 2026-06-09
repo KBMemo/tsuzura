@@ -14,8 +14,8 @@ usage() {
   cat <<'EOF'
 Usage: bin/deploy [options]
 
-Pull the latest code, install dependencies, migrate the database,
-and restart the tsuzura systemd service (production server).
+Pull the latest code, install dependencies, build frontend assets,
+migrate the database, and restart the tsuzura systemd service (production server).
 
 Options:
   -b, --branch BRANCH   git fetch/pull this branch (default: current branch)
@@ -115,6 +115,12 @@ fi
 
 step "bundle install"
 run bundle install
+
+step "npm ci"
+run npm ci
+
+step "vite build"
+run npm run build
 
 step "db:migrate"
 run bundle exec rails db:migrate
