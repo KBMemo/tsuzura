@@ -62,7 +62,7 @@ module WebHelper
     svg = File.read(path)
     svg = svg.sub(
       /<svg\b[^>]*>/,
-      '<svg class="app-brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 373" role="img" aria-hidden="true">'
+      '<svg class="app-brand-icon" width="28" height="28" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 373" role="img" aria-hidden="true">'
     )
     raw svg
   end

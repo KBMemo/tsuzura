@@ -1,6 +1,10 @@
 <% content_for :title, "#{@album.title} — Tsuzura" %>
 
-<p><%= link_to "← アルバム一覧", web_albums_path %></p>
+<nav class="breadcrumbs" aria-label="パンくずリスト">
+  <%= link_to "アルバム一覧", web_albums_path %>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page"><%= @album.title %></span>
+</nav>
 
 <h2><%= @album.title %></h2>
 <p class="muted">album::<code><%= @album.id %></code>[]</p>
@@ -21,8 +25,8 @@
     <% @items.each do |item| %>
       <li class="thumb-card">
         <% if item.web.attached? || item.file.attached? %>
-          <%= link_to edit_web_medium_path(item) do %>
-            <%= image_tag preview_web_medium_path(item), alt: item.original_filename, class: "thumb-img" %>
+          <%= link_to edit_web_medium_path(item, album_id: @album.id) do %>
+            <%= image_tag preview_web_medium_path(item), alt: item.original_filename, class: "thumb-img", width: 160, height: 160, loading: "lazy", decoding: "async" %>
           <% end %>
         <% end %>
         <div class="thumb-meta">
@@ -56,7 +60,7 @@
             </div>
           </dl>
           <span class="thumb-macro">image::media:<code><%= item.id %></code>[]</span>
-          <%= link_to "編集", edit_web_medium_path(item), class: "btn" %>
+          <%= link_to "編集", edit_web_medium_path(item, album_id: @album.id), class: "btn" %>
         </div>
       </li>
     <% end %>

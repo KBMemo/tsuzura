@@ -60,6 +60,8 @@ a { color: var(--app-link); }
   flex-shrink: 0;
   width: 1.75rem;
   height: 1.75rem;
+  max-width: 1.75rem;
+  max-height: 1.75rem;
 }
 
 .app-tagline {
@@ -95,6 +97,19 @@ th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid var(--app-b
 form.inline { display: inline; }
 .muted { color: var(--app-muted); font-size: 0.875rem; }
 
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  color: var(--app-muted);
+  font-size: 0.875rem;
+}
+
+.breadcrumbs a { color: var(--app-link); }
+.breadcrumbs [aria-current="page"] { color: var(--app-text); font-weight: 600; }
+
 ul.thumbs {
   list-style: none;
   padding: 0;
@@ -104,7 +119,16 @@ ul.thumbs {
 }
 
 ul.thumbs .thumb-card { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8125rem; }
-ul.thumbs .thumb-img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 0.375rem; border: 1px solid var(--app-border); }
+ul.thumbs .thumb-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  border: 1px solid var(--app-border);
+}
 ul.thumbs .thumb-meta { display: flex; flex-direction: column; gap: 0.35rem; }
 ul.thumbs .thumb-filename { font-weight: 500; word-break: break-all; }
 ul.thumbs .thumb-macro { font-family: ui-monospace, monospace; color: var(--app-muted); font-size: 0.75rem; }

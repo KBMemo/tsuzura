@@ -3,12 +3,21 @@
 <% crop = { "x" => 0, "y" => 0, "w" => 1, "h" => 1 }.merge((stack["crop"] || {}).stringify_keys.compact_blank) %>
 <% blur_regions = stack["blur_regions"].presence || [] %>
 
-<p><%= link_to "← アルバムへ", web_albums_path %></p>
+<nav class="breadcrumbs" aria-label="パンくずリスト">
+  <%= link_to "アルバム一覧", web_albums_path %>
+  <% if @source_album %>
+    <span aria-hidden="true">/</span>
+    <%= link_to @source_album.title, web_album_path(@source_album) %>
+  <% end %>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">写真を編集</span>
+</nav>
 
 <h2>写真を編集</h2>
 <p class="muted"><code>image::media:<%= @item.id %>[]</code></p>
 
 <%= form_with url: web_medium_path(@item), method: :patch, scope: :edit_stack, id: "edit-stack-form" do |f| %>
+  <%= hidden_field_tag :album_id, @source_album&.id if @source_album %>
   <div class="media-edit-layout" data-cropper-editor data-initial-crop="<%= json_escape(crop.to_json) %>">
     <section class="media-edit-preview" aria-label="トリミング範囲">
       <% if @item.file.attached? %>
