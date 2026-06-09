@@ -21,14 +21,19 @@ module Tsuzura
         return item unless item.file.attached?
 
         item.file.blob.open do |tempfile|
-          apply_from_path!(item, tempfile.path, fallback_mtime: nil)
+          apply_from_path!(
+            item,
+            tempfile.path,
+            fallback_mtime: attachment_fallback_mtime(item),
+            file_mtime: attachment_file_mtime(item)
+          )
         end
       end
 
-      def apply_from_path!(item, path, fallback_mtime: nil)
+      def apply_from_path!(item, path, fallback_mtime: nil, file_mtime: nil)
         return item unless path.present? && File.file?(path)
 
-        data = extract(path, fallback_mtime: fallback_mtime)
+        data = extract(path, fallback_mtime: fallback_mtime, file_mtime: file_mtime)
         item.exif_captured_at = data[:exif_captured_at]
         item.file_mtime = data[:file_mtime]
         item.captured_at = data[:captured_at]
@@ -60,9 +65,8 @@ module Tsuzura
 
       private
 
-      def extract(path, fallback_mtime:)
-        stat = File.stat(path)
-        file_mtime = stat.mtime.in_time_zone
+      def extract(path, fallback_mtime:, file_mtime:)
+        file_mtime = (file_mtime || File.stat(path).mtime).in_time_zone
         exif_hash = read_exif_hash(path)
         exif_captured_at = capture_time_from_exif(exif_hash)
         latitude, longitude = coordinates_from_exif(path, exif_hash)
@@ -79,6 +83,14 @@ module Tsuzura
           width: width,
           height: height
         }
+      end
+
+      def attachment_fallback_mtime(item)
+        item.file.blob.created_at
+      end
+
+      def attachment_file_mtime(item)
+        item.file.blob.created_at
       end
 
       def read_exif_hash(path)

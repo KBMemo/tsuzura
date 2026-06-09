@@ -113,21 +113,26 @@ bin/ci
 
 ## メディアメタデータ再取得
 
-既存画像の撮影日時・位置情報・寸法などが空の場合、元画像 attachment から再抽出して `tsuzura_media_items` を更新します。
+既存画像の撮影日時・位置情報・寸法などを、Active Storage の元画像 BLOB から再抽出して `tsuzura_media_items` を更新します。
 
 ```bash
-# 欠落している項目がある画像だけ更新
-bin/rails tsuzura:metadata:backfill MISSING_ONLY=1
+# 全画像を元画像 BLOB から再読み込み
+bin/rails tsuzura:metadata:refresh_from_blobs
 
-# 全画像を再読み込み
-bin/rails tsuzura:metadata:backfill
+# 欠落している項目がある画像だけ更新
+bin/rails tsuzura:metadata:refresh_from_blobs MISSING_ONLY=1
 
 # 特定 ID のみ
-bin/rails tsuzura:metadata:backfill IDS=01J...,01K...
+bin/rails tsuzura:metadata:refresh_from_blobs IDS=01J...,01K...
 
 # 対象件数の確認
-bin/rails tsuzura:metadata:backfill MISSING_ONLY=1 DRY_RUN=1
+bin/rails tsuzura:metadata:refresh_from_blobs MISSING_ONLY=1 DRY_RUN=1
+
+# 既存名も同じ処理
+bin/rails tsuzura:metadata:backfill
 ```
+
+`refresh_from_blobs` は EXIF 撮影日時・GPS・寸法を元画像 BLOB から読み直します。BLOB を一時ファイルとして開く都合上、一時ファイルの mtime は採用しません。EXIF 撮影日時がない画像の日付 fallback は BLOB 登録日時です。
 
 GPS が元画像に含まれない場合、位置情報は空のままです。そのため `MISSING_ONLY=1` では GPS のない画像が再度対象に残ることがあります。
 

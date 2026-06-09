@@ -19,6 +19,20 @@ class Tsuzura::MediaMetadataBackfillTest < ActiveSupport::TestCase
     assert item.height.present?
   end
 
+  test "refresh from attachment does not use temporary blob file mtime" do
+    item = create_tsuzura_media_item!(account: create_tsuzura_account!, filename: "sample.png")
+    blob_time = Time.zone.parse("2024-01-02 03:04:05")
+    wrong_time = Time.zone.parse("2026-06-10 12:00:00")
+    item.file.blob.update_column(:created_at, blob_time)
+    item.update_columns(captured_at: wrong_time, file_mtime: nil)
+
+    Tsuzura::MediaMetadataBackfill.new(scope: MediaItem.where(id: item.id)).call
+
+    item.reload
+    assert_in_delta blob_time.to_i, item.file_mtime.to_i, 1
+    assert_in_delta blob_time.to_i, item.captured_at.to_i, 1
+  end
+
   test "missing_only excludes items with core metadata" do
     item = create_tsuzura_media_item!(account: create_tsuzura_account!, filename: "sample.png")
     item.update!(
