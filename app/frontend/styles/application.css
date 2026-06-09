@@ -105,9 +105,31 @@ ul.thumbs {
 
 ul.thumbs .thumb-card { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.8125rem; }
 ul.thumbs .thumb-img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 0.375rem; border: 1px solid var(--app-border); }
-ul.thumbs .thumb-meta { display: flex; flex-direction: column; gap: 0.25rem; }
+ul.thumbs .thumb-meta { display: flex; flex-direction: column; gap: 0.35rem; }
 ul.thumbs .thumb-filename { font-weight: 500; word-break: break-all; }
 ul.thumbs .thumb-macro { font-family: ui-monospace, monospace; color: var(--app-muted); font-size: 0.75rem; }
+ul.thumbs .thumb-info {
+  display: grid;
+  gap: 0.125rem;
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+}
+ul.thumbs .thumb-info div {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  gap: 0.35rem;
+}
+ul.thumbs .thumb-info dt {
+  margin: 0;
+  color: var(--app-muted);
+  font-weight: 600;
+}
+ul.thumbs .thumb-info dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
 .media-edit-layout { display: grid; gap: 1rem; }
 .media-edit-preview { min-width: 0; }

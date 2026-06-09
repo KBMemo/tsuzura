@@ -8,7 +8,10 @@ module Web
 
     def show
       @album = find_owned_album!
-      @items = @album.album_items.order(:position).includes(:media_item).map(&:media_item)
+      @items = @album.album_items
+        .order(:position)
+        .includes(media_item: [{ file_attachment: :blob }, { web_attachment: :blob }])
+        .map(&:media_item)
     end
 
     def new

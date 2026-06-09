@@ -110,6 +110,26 @@ bin/rails test
 bin/ci
 ```
 
+## メディアメタデータ再取得
+
+既存画像の撮影日時・位置情報・寸法などが空の場合、元画像 attachment から再抽出して `tsuzura_media_items` を更新します。
+
+```bash
+# 欠落している項目がある画像だけ更新
+bin/rails tsuzura:metadata:backfill MISSING_ONLY=1
+
+# 全画像を再読み込み
+bin/rails tsuzura:metadata:backfill
+
+# 特定 ID のみ
+bin/rails tsuzura:metadata:backfill IDS=01J...,01K...
+
+# 対象件数の確認
+bin/rails tsuzura:metadata:backfill MISSING_ONLY=1 DRY_RUN=1
+```
+
+GPS が元画像に含まれない場合、位置情報は空のままです。そのため `MISSING_ONLY=1` では GPS のない画像が再度対象に残ることがあります。
+
 ## CLI
 
 ```bash
