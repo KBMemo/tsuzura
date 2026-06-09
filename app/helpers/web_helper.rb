@@ -10,7 +10,7 @@ module WebHelper
     return "-" unless time
 
     label = item.exif_captured_at.present? ? "撮影" : "日時"
-    "#{label} #{l(time.in_time_zone, format: :short)}"
+    "#{label} #{time.in_time_zone.strftime('%Y-%m-%d')}"
   end
 
   def media_item_location_label(item)

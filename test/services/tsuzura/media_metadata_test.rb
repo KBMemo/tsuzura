@@ -9,6 +9,17 @@ class Tsuzura::MediaMetadataTest < ActiveSupport::TestCase
     assert_equal Time.zone.parse("2026-06-01 12:00:00"), time
   end
 
+  test "captures snake_case EXIFR metadata keys" do
+    exif_hash = {
+      "date_time_original" => "2026:06:01 12:00:00",
+      "image_width" => 640,
+      "image_height" => 480
+    }
+
+    assert_equal Time.zone.parse("2026-06-01 12:00:00"), Tsuzura::MediaMetadata.send(:capture_time_from_exif, exif_hash)
+    assert_equal [ 640, 480 ], Tsuzura::MediaMetadata.send(:dimensions_from_exif, exif_hash, "missing.jpg")
+  end
+
   test "apply_from_path sets file_mtime without exif_captured_at for PNG" do
     account = create_tsuzura_account!
     item = MediaItem.new(owner_account_id: account.id, kind: "image")

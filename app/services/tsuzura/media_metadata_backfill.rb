@@ -4,10 +4,11 @@ module Tsuzura
   class MediaMetadataBackfill
     Result = Struct.new(:total, :updated, :skipped, :failed, :errors, keyword_init: true)
 
-    def initialize(scope: MediaItem.all, missing_only: false, dry_run: false, logger: Rails.logger)
+    def initialize(scope: MediaItem.all, missing_only: false, dry_run: false, verbose: false, logger: Rails.logger)
       @scope = scope
       @missing_only = missing_only
       @dry_run = dry_run
+      @verbose = verbose
       @logger = logger
     end
 
@@ -21,15 +22,19 @@ module Tsuzura
         if @dry_run
           result.updated += 1
           log("would refresh metadata for #{item.id}")
+          verbose_item(item, before, before, "dry_run")
           next
         end
 
         Tsuzura::MediaMetadata.apply_from_attachment!(item)
         item.reload
-        if metadata_snapshot(item) == before
+        after = metadata_snapshot(item)
+        if after == before
           result.skipped += 1
+          verbose_item(item, before, after, "skipped")
         else
           result.updated += 1
+          verbose_item(item, before, after, "updated")
         end
       rescue StandardError => e
         result.failed += 1
@@ -61,8 +66,31 @@ module Tsuzura
       )
     end
 
+    def verbose_item(item, before, after, status)
+      return unless @verbose
+
+      puts [
+        status,
+        item.id,
+        item.original_filename,
+        "captured_at=#{format_change(before, after, 'captured_at')}",
+        "exif_captured_at=#{format_change(before, after, 'exif_captured_at')}",
+        "lat=#{format_change(before, after, 'latitude')}",
+        "lon=#{format_change(before, after, 'longitude')}",
+        "size=#{format_change(before, after, 'width')}x#{format_change(before, after, 'height')}",
+        "exif_keys=#{Array(after['exif']&.keys).sort.join(',')}"
+      ].join(" | ")
+    end
+
+    def format_change(before, after, key)
+      old_value = before[key].presence || "-"
+      new_value = after[key].presence || "-"
+      old_value == new_value ? new_value : "#{old_value}->#{new_value}"
+    end
+
     def log(message)
       @logger&.info(message)
+      puts message if @verbose
     end
   end
 end

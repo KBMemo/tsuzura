@@ -22,10 +22,12 @@ namespace :tsuzura do
 
     missing_only = ActiveModel::Type::Boolean.new.cast(ENV["MISSING_ONLY"])
     dry_run = ActiveModel::Type::Boolean.new.cast(ENV["DRY_RUN"])
+    verbose = ActiveModel::Type::Boolean.new.cast(ENV["VERBOSE"])
     result = Tsuzura::MediaMetadataBackfill.new(
       scope: scope,
       missing_only: missing_only,
       dry_run: dry_run,
+      verbose: verbose,
       logger: Rails.logger
     ).call
 

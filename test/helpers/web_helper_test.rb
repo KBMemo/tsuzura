@@ -13,7 +13,7 @@ class WebHelperTest < ActionView::TestCase
       height: 480
     )
 
-    assert_includes media_item_capture_time_label(item), "撮影"
+    assert_equal "撮影 2026-06-01", media_item_capture_time_label(item)
     assert_equal "35.68124, 139.76712", media_item_location_label(item)
     assert_equal "https://www.google.com/maps/search/?api=1&query=35.681236,139.767125", media_item_location_map_url(item)
     assert_equal "640 x 480px", media_item_dimensions_label(item)

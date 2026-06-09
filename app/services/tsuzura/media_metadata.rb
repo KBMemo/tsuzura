@@ -6,7 +6,7 @@ require "exifr/jpeg"
 module Tsuzura
   # EXIF / ファイル日時から captured_at・exif JSON・寸法・位置を埋める。
   class MediaMetadata
-    CAPTURE_TIME_KEYS = %w[DateTimeOriginal CreateDate DateTime].freeze
+    CAPTURE_TIME_KEYS = %w[date_time_original date_time_digitized date_time DateTimeOriginal CreateDate DateTime].freeze
 
     class << self
       def apply_from_upload!(item, upload)
@@ -67,9 +67,10 @@ module Tsuzura
 
       def extract(path, fallback_mtime:, file_mtime:)
         file_mtime = (file_mtime || File.stat(path).mtime).in_time_zone
-        exif_hash = read_exif_hash(path)
+        jpeg = read_jpeg(path)
+        exif_hash = read_exif_hash(path, jpeg: jpeg)
         exif_captured_at = capture_time_from_exif(exif_hash)
-        latitude, longitude = coordinates_from_exif(path, exif_hash)
+        latitude, longitude = coordinates_from_exif(path, jpeg: jpeg)
         captured_at = exif_captured_at || fallback_mtime || file_mtime || Time.current
         width, height = dimensions_from_exif(exif_hash, path)
 
@@ -93,30 +94,45 @@ module Tsuzura
         item.file.blob.created_at
       end
 
-      def read_exif_hash(path)
-        case File.extname(path).downcase
-        when ".jpg", ".jpeg"
-          jpeg = EXIFR::JPEG.new(path)
-          return {} unless jpeg.exif
+      def read_jpeg(path)
+        return nil unless %w[.jpg .jpeg].include?(File.extname(path).downcase)
 
-          raw = jpeg.exif.to_hash.transform_keys(&:to_s).transform_values { |v| serialize_exif_value(v) }
-          sanitize_exif_hash(raw)
-        else
-          {}
-        end
+        EXIFR::JPEG.new(path)
       rescue EXIFR::MalformedImage, EXIFR::MalformedJPEG, Errno::ENOENT, StandardError => e
         Rails.logger.debug("Tsuzura EXIF read skipped for #{path}: #{e.class}")
+        nil
+      end
+
+      def read_exif_hash(path, jpeg:)
+        return {} unless jpeg
+
+        raw = jpeg.exif ? jpeg.exif.to_hash.transform_keys(&:to_s).transform_values { |v| serialize_exif_value(v) } : {}
+        raw.merge!(jpeg_method_metadata(jpeg))
+        sanitize_exif_hash(raw)
+      rescue StandardError => e
+        Rails.logger.debug("Tsuzura EXIF hash read skipped for #{path}: #{e.class}")
         {}
       end
 
-      def coordinates_from_exif(path, _exif_hash)
-        read_gps(path)
+      def jpeg_method_metadata(jpeg)
+        {
+          "date_time_original" => jpeg.date_time_original,
+          "date_time_digitized" => jpeg.date_time_digitized,
+          "date_time" => jpeg.date_time,
+          "image_width" => jpeg.width,
+          "image_height" => jpeg.height,
+          "make" => jpeg.make,
+          "model" => jpeg.model
+        }.compact
       end
 
-      def read_gps(path)
-        return [ nil, nil ] unless %w[.jpg .jpeg].include?(File.extname(path).downcase)
+      def coordinates_from_exif(_path, jpeg:)
+        read_gps(jpeg)
+      end
 
-        jpeg = EXIFR::JPEG.new(path)
+      def read_gps(jpeg)
+        return [ nil, nil ] unless jpeg
+
         gps = jpeg.gps
         return [ nil, nil ] unless gps
 
@@ -192,8 +208,8 @@ module Tsuzura
       end
 
       def dimensions_from_exif(exif_hash, path)
-        width = exif_hash["PixelXDimension"] || exif_hash["ImageWidth"]
-        height = exif_hash["PixelYDimension"] || exif_hash["ImageHeight"]
+        width = exif_hash["pixel_x_dimension"] || exif_hash["image_width"] || exif_hash["PixelXDimension"] || exif_hash["ImageWidth"]
+        height = exif_hash["pixel_y_dimension"] || exif_hash["image_height"] || exif_hash["PixelYDimension"] || exif_hash["ImageHeight"]
         return [ width, height ] if width.present? && height.present?
 
         probe_dimensions(path)
