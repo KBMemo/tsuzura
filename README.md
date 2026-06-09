@@ -19,12 +19,33 @@
 
 ## 開発
 
+KBMemo と credentials / DB を共有します（`config/master.key` → `../../site/config/master.key`）。
+
 ```bash
-# KBMemo と credentials / DB を共有（config/master.key → ../../site/config/master.key）
 cd kbmemo-media
 bundle install
+npm install
 bin/rails db:migrate
+```
+
+Vite 開発サーバー込みで起動する場合:
+
+```bash
+PORT=3008 bin/dev
+```
+
+`bin/dev` は Rails（既定 `http://localhost:3008`）と Vite（`config/vite.json` の development port、既定 `3046`）を同時に起動します。画像編集 UI などのフロントエンド変更を触るときはこちらを使います。
+
+Rails だけを起動する場合:
+
+```bash
 PORT=3008 bin/rails server
+```
+
+production 相当のビルド確認:
+
+```bash
+npm run build
 ```
 
 `.env` 例: `.env.example`（`KBMEMO_LOGIN_URL` / `KBMEMO_HOME_URL` / `TSUZURA_CORS_ORIGINS`）

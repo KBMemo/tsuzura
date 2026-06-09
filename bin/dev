@@ -1,2 +1,23 @@
-#!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${APP_ROOT}"
+
+PORT="${PORT:-3008}"
+RAILS_PID=""
+VITE_PID=""
+
+cleanup() {
+  [[ -n "${RAILS_PID}" ]] && kill "${RAILS_PID}" 2>/dev/null || true
+  [[ -n "${VITE_PID}" ]] && kill "${VITE_PID}" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+bundle exec rails server -p "${PORT}" "$@" &
+RAILS_PID="$!"
+
+npm run dev &
+VITE_PID="$!"
+
+wait -n "${RAILS_PID}" "${VITE_PID}"
