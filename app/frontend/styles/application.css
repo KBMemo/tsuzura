@@ -169,7 +169,14 @@ ul.thumbs .thumb-img {
 }
 ul.thumbs .thumb-meta { display: flex; flex-direction: column; gap: 0.35rem; }
 ul.thumbs .thumb-filename { font-weight: 500; word-break: break-all; }
-ul.thumbs .thumb-macro { font-family: ui-monospace, monospace; color: var(--app-muted); font-size: 0.75rem; }
+ul.thumbs .thumb-macro {
+  font-family: ui-monospace, monospace;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 ul.thumbs .thumb-info {
   display: grid;
   gap: 0.125rem;
