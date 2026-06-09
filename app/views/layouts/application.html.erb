@@ -18,6 +18,10 @@
           <%= tsuzura_brand_icon %>
           <span>Tsuzura</span>
         <% end %>
+        <div class="app-nav-links">
+          <%= link_to "アルバム", web_albums_path %>
+          <%= link_to "日付別", web_media_dates_path %>
+        </div>
         <p class="app-tagline muted">KBMemo 写真籠 — <%= link_to "kbmemo.net", kbmemo_home_url, target: "_blank", rel: "noopener" %></p>
       </nav>
     </header>

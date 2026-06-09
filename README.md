@@ -12,6 +12,7 @@
 ログイン済み（KBMemo と同一 `_kbmemo_session`、本番は `domain: .kbmemo.net`）で:
 
 * `/` — アルバム一覧
+* `/media/dates` — 登録済み写真の全件日付別表示
 * `/albums/:id` — 詳細・複数ファイル upload（`POST /v1/media/batch` と同処理）
 * `/albums/new` — アルバム作成
 

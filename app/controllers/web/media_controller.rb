@@ -5,6 +5,7 @@ module Web
     def edit
       @item = find_owned_item!
       @source_album = find_source_album(@item)
+      @source_view = source_view
     end
 
     def preview
@@ -21,10 +22,11 @@ module Web
     def update
       @item = find_owned_item!
       @source_album = find_source_album(@item)
+      @source_view = source_view
       stack = Tsuzura::EditStack.normalize(edit_stack_params)
       @item.update!(edit_stack: stack)
       ApplyEditStackJob.perform_later(@item.id)
-      redirect_to edit_web_medium_path(@item, album_id: @source_album&.id), notice: "編集を保存しました。表示用画像を生成しています。"
+      redirect_to edit_web_medium_path(@item, edit_redirect_params), notice: "編集を保存しました。表示用画像を生成しています。"
     rescue Tsuzura::EditStack::ValidationError => e
       flash.now[:alert] = e.message
       render :edit, status: :unprocessable_entity
@@ -57,6 +59,19 @@ module Web
           owner_account_id: current_account.id,
           tsuzura_album_items: { media_item_id: item.id }
         )
+    end
+
+    def source_view
+      return :dates if params[:source].to_s == "dates" && @source_album.nil?
+
+      nil
+    end
+
+    def edit_redirect_params
+      return { album_id: @source_album.id } if @source_album
+      return { source: "dates" } if @source_view == :dates
+
+      {}
     end
 
     def edit_stack_params

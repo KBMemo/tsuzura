@@ -1,0 +1,30 @@
+<% content_for :title, "日付別 — Tsuzura" %>
+
+<nav class="breadcrumbs" aria-label="パンくずリスト">
+  <%= link_to "アルバム一覧", web_albums_path %>
+  <span aria-hidden="true">/</span>
+  <span aria-current="page">日付別</span>
+</nav>
+
+<div class="page-actions">
+  <h2>日付別</h2>
+  <%= link_to "新しいアルバム", new_web_album_path, class: "btn" %>
+</div>
+
+<% if @date_groups.empty? %>
+  <p class="muted">登録済みの写真がありません。</p>
+<% else %>
+  <% @date_groups.each do |group| %>
+    <section class="date-group">
+      <header class="date-group-header">
+        <h3><%= group[:date].strftime("%Y-%m-%d") %></h3>
+        <span class="muted"><%= group[:items].size %> 件</span>
+      </header>
+      <ul class="thumbs">
+        <% group[:items].each do |item| %>
+          <%= render "web/media/thumb_card", item: item, edit_params: { source: "dates" } %>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+<% end %>

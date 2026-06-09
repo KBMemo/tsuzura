@@ -69,6 +69,16 @@ a { color: var(--app-link); }
   font-size: 0.875rem;
 }
 
+.app-nav-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.app-nav-links a { text-decoration: none; }
+.app-nav-links a:hover { text-decoration: underline; }
+
 .flash {
   padding: 0.5rem 0.75rem;
   margin-bottom: 1rem;
@@ -109,6 +119,34 @@ form.inline { display: inline; }
 
 .breadcrumbs a { color: var(--app-link); }
 .breadcrumbs [aria-current="page"] { color: var(--app-text); font-weight: 600; }
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.page-actions h2 { margin: 0; }
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.date-group { margin-top: 1.5rem; }
+
+.date-group-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.date-group-header h3 { margin: 0; }
 
 ul.thumbs {
   list-style: none;

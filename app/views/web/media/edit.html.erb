@@ -8,6 +8,9 @@
   <% if @source_album %>
     <span aria-hidden="true">/</span>
     <%= link_to @source_album.title, web_album_path(@source_album) %>
+  <% elsif @source_view == :dates %>
+    <span aria-hidden="true">/</span>
+    <%= link_to "日付別", web_media_dates_path %>
   <% end %>
   <span aria-hidden="true">/</span>
   <span aria-current="page">写真を編集</span>
@@ -17,7 +20,8 @@
 <p class="muted"><code>image::media:<%= @item.id %>[]</code></p>
 
 <%= form_with url: web_medium_path(@item), method: :patch, scope: :edit_stack, id: "edit-stack-form" do |f| %>
-  <%= hidden_field_tag :album_id, @source_album&.id if @source_album %>
+  <%= hidden_field_tag :album_id, @source_album.id if @source_album %>
+  <%= hidden_field_tag :source, "dates" if @source_view == :dates %>
   <div class="media-edit-layout" data-cropper-editor data-initial-crop="<%= json_escape(crop.to_json) %>">
     <section class="media-edit-preview" aria-label="トリミング範囲">
       <% if @item.file.attached? %>

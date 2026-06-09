@@ -8,6 +8,7 @@ Rails.application.routes.draw do
         post :upload
       end
     end
+    get "media/dates", to: "media_dates#index", as: :media_dates
     resources :media, only: %i[edit update], param: :id do
       member do
         get :preview

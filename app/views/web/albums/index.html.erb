@@ -1,8 +1,12 @@
 <% content_for :title, "アルバム — Tsuzura" %>
 
-<p>
-  <%= link_to "新しいアルバム", new_web_album_path, class: "btn btn-primary" %>
-</p>
+<div class="page-actions">
+  <h2>アルバム</h2>
+  <div class="action-row">
+    <%= link_to "日付別", web_media_dates_path, class: "btn" %>
+    <%= link_to "新しいアルバム", new_web_album_path, class: "btn btn-primary" %>
+  </div>
+</div>
 
 <% if @albums.empty? %>
   <p class="muted">アルバムがありません。作成するか、CLI で import してください。</p>

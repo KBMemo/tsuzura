@@ -1,0 +1,41 @@
+<% edit_params = local_assigns.fetch(:edit_params, {}) %>
+<li class="thumb-card">
+  <% if item.web.attached? || item.file.attached? %>
+    <%= link_to edit_web_medium_path(item, edit_params) do %>
+      <%= image_tag preview_web_medium_path(item), alt: item.original_filename, class: "thumb-img", width: 160, height: 160, loading: "lazy", decoding: "async" %>
+    <% end %>
+  <% end %>
+  <div class="thumb-meta">
+    <span class="thumb-filename"><%= item.original_filename %></span>
+    <dl class="thumb-info" aria-label="画像情報">
+      <div>
+        <dt>日時</dt>
+        <dd><%= media_item_capture_time_label(item) %></dd>
+      </div>
+      <div>
+        <dt>位置</dt>
+        <dd>
+          <% if (map_url = media_item_location_map_url(item)) %>
+            <%= link_to media_item_location_label(item), map_url, target: "_blank", rel: "noopener" %>
+          <% else %>
+            <%= media_item_location_label(item) %>
+          <% end %>
+        </dd>
+      </div>
+      <div>
+        <dt>サイズ</dt>
+        <dd><%= media_item_dimensions_label(item) %></dd>
+      </div>
+      <div>
+        <dt>容量</dt>
+        <dd><%= media_item_file_size_label(item) %></dd>
+      </div>
+      <div>
+        <dt>種別</dt>
+        <dd><%= media_item_content_type_label(item) %></dd>
+      </div>
+    </dl>
+    <span class="thumb-macro">image::media:<code><%= item.id %></code>[]</span>
+    <%= link_to "編集", edit_web_medium_path(item, edit_params), class: "btn" %>
+  </div>
+</li>
