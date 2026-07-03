@@ -25,6 +25,7 @@ Rails.application.routes.draw do
       get "media/:id", to: "media#show", as: :media
       patch "media/:id/edits", to: "media#update_edits", as: :media_edits
       get "media/:id/web", to: "media#web", as: :media_web
+      get "media/:id/file", to: "media#file", as: :media_file
     end
   end
 

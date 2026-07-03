@@ -88,7 +88,20 @@ module Api
           return head :forbidden
         end
 
-        blob = item.web.attached? ? item.web.blob : item.file.blob
+        deliver_media_blob(item)
+      end
+
+      def file
+        item = find_owned_item
+        return unless item
+
+        deliver_media_blob(item)
+      end
+
+      private
+
+      def deliver_media_blob(item)
+        blob = media_delivery_blob(item)
         return head :not_found unless blob
 
         send_data blob.download,
@@ -97,7 +110,15 @@ module Api
           filename: item.original_filename.presence || blob.filename.to_s
       end
 
-      private
+      def media_delivery_blob(item)
+        if params[:source].to_s == "original"
+          return item.file.blob if item.file.attached?
+        elsif item.web.attached?
+          return item.web.blob
+        end
+
+        item.file.blob if item.file.attached?
+      end
 
       def find_owned_item
         item = MediaItem.find_by_ulid(params[:id])

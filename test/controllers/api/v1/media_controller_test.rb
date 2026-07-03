@@ -141,6 +141,36 @@ class Api::V1::MediaControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "file serves web render for owner via bearer token" do
+    get v1_media_file_path(@item.id), headers: tsuzura_auth_headers(@account)
+
+    assert_response :success
+    assert_equal "image/png", response.media_type
+    assert response.body.bytesize.positive?
+  end
+
+  test "file serves original when source=original" do
+    get v1_media_file_path(@item.id),
+      params: { source: "original" },
+      headers: tsuzura_auth_headers(@account)
+
+    assert_response :success
+    assert_equal "image/png", response.media_type
+  end
+
+  test "file requires bearer token" do
+    get v1_media_file_path(@item.id)
+
+    assert_response :unauthorized
+  end
+
+  test "file forbidden for other account" do
+    other = create_tsuzura_account!
+    get v1_media_file_path(@item.id), headers: tsuzura_auth_headers(other)
+
+    assert_response :forbidden
+  end
+
   test "update_edits accepts rotation with blank crop dimensions" do
     patch v1_media_edits_path(@item.id),
       params: { edit_stack: { rotate: 90, crop: { x: 0, y: 0, w: "", h: "" } } },

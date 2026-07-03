@@ -159,6 +159,7 @@ bin/tsuzura media show 01JH…
 | POST | `/v1/media/batch` | 一括アップロード（checksum 重複は再利用、`album_ids[]`、`auto_date_albums` でインボックス+日付アルバム） |
 | GET | `/v1/media/lookup?checksum=` | オーナー内の既存メディア照会（watch 取り込み用） |
 | GET | `/v1/media/:id` | メタデータ |
+| GET | `/v1/media/:id/file` | Bearer 認証で画像バイナリ配信（`?source=original` で原画） |
 | GET | `/v1/media/:id/web` | 署名付き画像配信 |
 | GET/POST | `/v1/albums` | アルバム一覧・作成 |
 | GET | `/internal/albums` | KBMemo サーバー向け一覧（`owner_account_id` + internal secret） |
