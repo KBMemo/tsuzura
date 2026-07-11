@@ -49,7 +49,43 @@ production 相当のビルド確認:
 npm run build
 ```
 
-`.env` 例: `.env.example`（`KBMEMO_LOGIN_URL` / `KBMEMO_HOME_URL` / `TSUZURA_CORS_ORIGINS`）
+### 環境変数（開発）
+
+`bin/dev` と `bin/rails server` は **`.env` を読み込みません**。シェルに既にある環境変数をそのまま引き継ぎ、`PORT` だけ未設定時は `3008` を使います（本番の `start.sh` → `scripts/production_env.sh` が `.env.production` を読むのとは別）。
+
+任意の開発用オーバーライドは、起動前に export するか一時的に source してください。
+
+```bash
+# 例: ローカル用 .env を手動で読み込んでから起動
+set -a && source .env.development && set +a && bin/dev
+
+# 例: 個別指定
+KBMEMO_LOGIN_URL=http://localhost:3000/login PORT=3008 bin/dev
+```
+
+| 変数 | 開発時の既定（未設定時） | 備考 |
+|------|-------------------------|------|
+| `PORT` | `3008` | `bin/dev` が設定 |
+| `KBMEMO_LOGIN_URL` | `http://localhost:3000/login` | Web UI 未ログイン時のリダイレクト先 |
+| `KBMEMO_HOME_URL` | `http://localhost:3000` | ナビの KBMemo リンク |
+| `TSUZURA_PUBLIC_URL` | `http://localhost:3008` | 署名付き URL のベース |
+| `TSUZURA_CORS_ORIGINS` | kbmemo.net + `localhost:3000` | `/v1/*` の CORS |
+| `KBMEMO_TSUZURA_INTERNAL_SECRET` | credentials `tsuzura.internal_secret` | KBMemo ↔ `/internal/*`。ENV がなくても credentials があれば可 |
+| `TSUZURA_URL_SIGNING_SECRET` | credentials → `secret_key_base` | 署名付き画像 URL 用 |
+
+DB 接続・`RAILS_MASTER_KEY` は KBMemo と共有の **credentials**（`config/master.key`）です。`.env` ファイルの雛形は `.env.example`（本番は `.env.production` にコピー）を参照。
+
+### 認証トークン（開発）
+
+用途ごとに次のとおりです。
+
+| 用途 | 開発時の設定 |
+|------|-------------|
+| **Web UI**（`bin/dev`） | 不要。KBMemo ログイン後の `_kbmemo_session` Cookie |
+| **KBMemo 連携**（`/internal/*`） | 不要（上表どおり credentials の internal secret） |
+| **CLI / REST API**（`bin/tsuzura`、`curl` 等） | `TSUZURA_API_TOKEN` をシェルに export。KBMemo プロフィールで「Tsuzura CLI トークンを発行」 |
+
+Bearer トークン（`tsuzura_…`）は **アカウントごとに DB にダイジェスト保存**され、平文は発行時に一度だけ表示されます。`.env` や `bin/dev` では自動設定されないため、CLI を使うときは保存済みの値を export するか、プロフィールで再発行してください（再発行すると旧トークンは無効）。
 
 ## 本番（systemd）
 
@@ -138,9 +174,11 @@ GPS が元画像に含まれない場合、位置情報は空のままです。�
 
 ## CLI
 
+CLI は Rodauth セッションではなく **Bearer トークン**のみ受け付けます。トークンは KBMemo のプロフィール画面で発行し、シェルに export します（`bin/dev` は読み込みません）。
+
 ```bash
-export TSUZURA_BASE_URL=http://localhost:3008
-export TSUZURA_API_TOKEN=tsuzura_…   # KBMemo プロフィールで発行
+export TSUZURA_BASE_URL=http://localhost:3008   # 未設定時もこの URL が既定
+export TSUZURA_API_TOKEN=tsuzura_…              # プロフィールで発行した平文（再表示不可）
 
 bin/tsuzura import --album "2024 夏" ./photos/
 bin/tsuzura import --auto-date-albums -a "Trip 2026" ~/Dropbox/Camera\ Upload/  # manifest にオプション保存
@@ -165,6 +203,9 @@ bin/tsuzura media show 01JH…
 | GET | `/internal/albums` | KBMemo サーバー向け一覧（`owner_account_id` + internal secret） |
 | GET | `/internal/albums/:id` | KBMemo サーバー向け詳細（`X-Kbmemo-Internal-Secret`） |
 
-認証: Rodauth セッション Cookie（`_kbmemo_session`）または `Authorization: Bearer tsuzura_…`
+認証:
+
+* `/v1/*`（Web 除く）: Rodauth セッション Cookie（`_kbmemo_session`）または `Authorization: Bearer tsuzura_…`（CLI トークンはプロフィール発行 → `TSUZURA_API_TOKEN`）
+* `/internal/*`: `X-Kbmemo-Internal-Secret`（ENV または credentials `tsuzura.internal_secret`）
 
 CORS: `/v1/*` に `TSUZURA_CORS_ORIGINS`（既定: kbmemo.net + `localhost:3000`）。メモピッカーは KBMemo の `/internal/tsuzura/*` 経由が主。
