@@ -15,7 +15,12 @@ class Web::AlbumsControllerTest < ActionDispatch::IntegrationTest
     assert_match %r{/login}, response.redirect_url
   end
 
-  test "index lists albums when authenticated via bearer is not used for web" do
-    skip "Web UI uses Rodauth session; integration covered via API tests"
+  test "index lists albums when authenticated with a Rodauth session" do
+    post "/login", params: { email: @account.email, password: "password" }
+    assert_response :redirect
+
+    get web_albums_path
+    assert_response :success
+    assert_includes response.body, @album.title
   end
 end
