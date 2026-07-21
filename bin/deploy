@@ -3,7 +3,7 @@ set -euo pipefail
 
 APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-SYSTEMD_UNIT="${TSUZURA_SYSTEMD_UNIT:-tsuzura}"
+SYSTEMD_UNIT="${TSUZURA_SYSTEMD_UNIT:-kbmemo-media}"
 GIT_REMOTE="${TSUZURA_GIT_REMOTE:-origin}"
 GIT_BRANCH=""
 SKIP_PULL=0
@@ -15,7 +15,7 @@ usage() {
 Usage: bin/deploy [options]
 
 Pull the latest code, install dependencies, build frontend assets,
-migrate the database, and restart the tsuzura systemd service (production server).
+migrate the database, and restart the kbmemo-media systemd user service (production server).
 
 Options:
   -b, --branch BRANCH   git fetch/pull this branch (default: current branch)
@@ -25,7 +25,7 @@ Options:
   -h, --help            show this help
 
 Environment:
-  TSUZURA_SYSTEMD_UNIT   systemd unit name (default: tsuzura)
+  TSUZURA_SYSTEMD_UNIT   systemd unit name (default: kbmemo-media)
   TSUZURA_HEALTH_URL     health check URL (default: https://media.kbmemo.net/up)
   TSUZURA_HEALTH_HOST    Host header for localhost checks (default: media.kbmemo.net)
   TSUZURA_GIT_REMOTE     git remote (default: origin)
@@ -132,7 +132,7 @@ fi
 
 if [[ "${SKIP_RESTART}" -eq 0 ]]; then
   step "restart ${SYSTEMD_UNIT}"
-  run sudo systemctl restart "${SYSTEMD_UNIT}"
+  run systemctl --user restart "${SYSTEMD_UNIT}"
 
   step "health check ${HEALTH_URL}"
   if [[ "${DRY_RUN}" -eq 1 ]]; then
@@ -145,7 +145,7 @@ if [[ "${SKIP_RESTART}" -eq 0 ]]; then
       fi
       if [[ "${attempt}" -eq 5 ]]; then
         echo "health check failed after restart: ${HEALTH_URL}" >&2
-        echo "check: sudo journalctl -u ${SYSTEMD_UNIT} -n 50 --no-pager" >&2
+        echo "check: journalctl --user -u ${SYSTEMD_UNIT} -n 50 --no-pager" >&2
         exit 1
       fi
       sleep 2
