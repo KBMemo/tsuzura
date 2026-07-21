@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ApplyEditStackJob < ApplicationJob
-  queue_as :default
+  queue_as :kbmemo_media
 
   def perform(media_item_id)
     item = MediaItem.find_by(id: media_item_id)
