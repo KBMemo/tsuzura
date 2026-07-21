@@ -42,7 +42,7 @@ class Tsuzura::EditStackTest < ActiveSupport::TestCase
 
   test "normalize keeps blur regions" do
     stack = Tsuzura::EditStack.normalize(
-      "blur_regions" => [{ "x" => 0.1, "y" => 0.2, "w" => 0.3, "h" => 0.4, "strength" => 8 }]
+      "blur_regions" => [ { "x" => 0.1, "y" => 0.2, "w" => 0.3, "h" => 0.4, "strength" => 8 } ]
     )
     assert_equal 1, stack["blur_regions"].size
     assert_equal 8, stack["blur_regions"].first["strength"]

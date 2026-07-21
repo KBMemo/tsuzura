@@ -10,7 +10,7 @@ module Web
       @album = find_owned_album!
       @items = @album.album_items
         .order(:position)
-        .includes(media_item: [{ file_attachment: :blob }, { web_attachment: :blob }])
+        .includes(media_item: [ { file_attachment: :blob }, { web_attachment: :blob } ])
         .map(&:media_item)
     end
 

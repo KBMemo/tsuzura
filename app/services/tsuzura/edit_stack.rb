@@ -3,7 +3,7 @@
 module Tsuzura
   # 非破壊編集パラメータ（正規化・検証）。
   class EditStack
-    VALID_ROTATES = [0, 90, 180, 270].freeze
+    VALID_ROTATES = [ 0, 90, 180, 270 ].freeze
     MAX_BLUR_REGIONS = 20
 
     class ValidationError < StandardError; end
@@ -68,7 +68,7 @@ module Tsuzura
 
           strength = h["strength"].to_i
           strength = 12 if strength <= 0
-          strength = [strength, 64].min
+          strength = [ strength, 64 ].min
           { "x" => x, "y" => y, "w" => w, "h" => height, "strength" => strength }
         end
       end

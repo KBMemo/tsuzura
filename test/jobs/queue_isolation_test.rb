@@ -9,6 +9,6 @@ class QueueIsolationTest < ActiveSupport::TestCase
       GenerateWebVariantJob
     ]
 
-    assert_equal ["kbmemo_media"], job_classes.map(&:queue_name).uniq
+    assert_equal [ "kbmemo_media" ], job_classes.map(&:queue_name).uniq
   end
 end

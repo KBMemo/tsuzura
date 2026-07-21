@@ -22,7 +22,7 @@ module Tsuzura
           return true
         end
 
-        out = Tempfile.new(["tsuzura-probe", ".jpg"])
+        out = Tempfile.new([ "tsuzura-probe", ".jpg" ])
         ImageProcessing::MiniMagick.source(path).resize_to_limit(8, 8).call(out.path)
         true
       rescue StandardError
@@ -62,7 +62,7 @@ module Tsuzura
 
     def download_original_to_tempfile
       ext = File.extname(@item.original_filename.to_s).presence || ".jpg"
-      file = Tempfile.new(["tsuzura-original", ext])
+      file = Tempfile.new([ "tsuzura-original", ext ])
       file.binmode
       file.write(@item.file.download)
       file.flush
@@ -91,13 +91,13 @@ module Tsuzura
       image = apply_crop_vips(image, stack["crop"]) if stack["crop"]
       image = apply_blur_regions_vips(image, stack["blur_regions"] || [])
 
-      longest = [image.width, image.height].max
+      longest = [ image.width, image.height ].max
       if longest > MAX_EDGE
         scale = MAX_EDGE.to_f / longest
         image = image.resize(scale)
       end
 
-      out = Tempfile.new(["tsuzura-web", ".jpg"])
+      out = Tempfile.new([ "tsuzura-web", ".jpg" ])
       image.jpegsave(out.path, Q: JPEG_QUALITY)
       out
     end
@@ -114,7 +114,7 @@ module Tsuzura
       image = apply_blur_regions_magick(image, regions) if regions.any?
 
       image = downscale_magick(image)
-      out = Tempfile.new(["tsuzura-web", ".jpg"])
+      out = Tempfile.new([ "tsuzura-web", ".jpg" ])
       image.format("jpg")
       image.quality(JPEG_QUALITY.to_s)
       image.write(out.path)
@@ -161,13 +161,13 @@ module Tsuzura
       y = (rect["y"] * height).round
       w = [ (rect["w"] * width).round, 1 ].max
       h = [ (rect["h"] * height).round, 1 ].max
-      w = [w, width - x].min
-      h = [h, height - y].min
-      [x, y, w, h]
+      w = [ w, width - x ].min
+      h = [ h, height - y ].min
+      [ x, y, w, h ]
     end
 
     def downscale_magick(image)
-      longest = [image.width, image.height].max
+      longest = [ image.width, image.height ].max
       return image if longest <= MAX_EDGE
 
       scale = MAX_EDGE.to_f / longest
