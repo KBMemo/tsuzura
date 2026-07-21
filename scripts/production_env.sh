@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# 本番サーバー向け: rbenv / PATH と .env.production を読み込む。
+# 本番サーバー向け: rbenv / nvm / PATH と .env.production を読み込む。
 # start.sh と bin/deploy から source する。
 
 if [[ -z "${APP_ROOT:-}" ]]; then
@@ -13,6 +13,13 @@ export RBENV_ROOT="${HOME}/.rbenv"
 if [[ -d "${RBENV_ROOT}/bin" ]]; then
   export PATH="${RBENV_ROOT}/bin:${PATH}"
   eval "$(rbenv init - bash)"
+fi
+
+export NVM_DIR="${HOME}/.nvm"
+if [[ -s "${NVM_DIR}/nvm.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "${NVM_DIR}/nvm.sh"
+  nvm use default >/dev/null 2>&1 || true
 fi
 
 ENV_FILE="${APP_ROOT}/.env.production"

@@ -100,7 +100,7 @@ source "${APP_ROOT}/scripts/production_env.sh"
 
 HEALTH_URL="${TSUZURA_HEALTH_URL:-https://media.kbmemo.net/up}"
 
-step "deploy tsuzura (${APP_ROOT}, RAILS_ENV=${RAILS_ENV})"
+step "deploy kbmemo-media (${APP_ROOT}, RAILS_ENV=${RAILS_ENV})"
 
 if [[ "${SKIP_PULL}" -eq 0 ]]; then
   step "git pull"
