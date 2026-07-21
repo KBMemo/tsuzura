@@ -126,7 +126,7 @@ curl -fsS http://127.0.0.1:3008/up
 
 ## 更新デプロイ（本番）
 
-`bin/deploy` で pull・`bundle install`・`npm ci`・`npm run build`・**`db:migrate`**（`tsuzura_*` テーブル等）・`tsuzura` ユニット再起動・ヘルスチェックを一括実行します。
+`bin/deploy` で pull・`bundle install`・`npm ci`・`npm run build`・**`db:migrate`**（`tsuzura_*` テーブル等）・`kbmemo-media` user service 再起動・ヘルスチェックを一括実行します。再起動後は既定で3秒待機し、`TSUZURA_HEALTH_CHECK_DELAY` で変更できます。
 
 ```bash
 cd /home/kensei/sites/kbmemo-media

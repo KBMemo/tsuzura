@@ -28,6 +28,8 @@ Environment:
   TSUZURA_SYSTEMD_UNIT   systemd unit name (default: kbmemo-media)
   TSUZURA_HEALTH_URL     health check URL (default: https://media.kbmemo.net/up)
   TSUZURA_HEALTH_HOST    Host header for localhost checks (default: media.kbmemo.net)
+  TSUZURA_HEALTH_CHECK_DELAY
+                         seconds to wait before first health check (default: 3)
   TSUZURA_GIT_REMOTE     git remote (default: origin)
 
 Example:
@@ -99,6 +101,12 @@ done
 source "${APP_ROOT}/scripts/production_env.sh"
 
 HEALTH_URL="${TSUZURA_HEALTH_URL:-https://media.kbmemo.net/up}"
+HEALTH_CHECK_DELAY="${TSUZURA_HEALTH_CHECK_DELAY:-3}"
+
+if [[ ! "${HEALTH_CHECK_DELAY}" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  echo "TSUZURA_HEALTH_CHECK_DELAY must be a non-negative number" >&2
+  exit 1
+fi
 
 step "deploy kbmemo-media (${APP_ROOT}, RAILS_ENV=${RAILS_ENV})"
 
@@ -133,6 +141,9 @@ fi
 if [[ "${SKIP_RESTART}" -eq 0 ]]; then
   step "restart ${SYSTEMD_UNIT}"
   run systemctl --user restart "${SYSTEMD_UNIT}"
+
+  step "wait ${HEALTH_CHECK_DELAY}s for startup"
+  run sleep "${HEALTH_CHECK_DELAY}"
 
   step "health check ${HEALTH_URL}"
   if [[ "${DRY_RUN}" -eq 1 ]]; then
