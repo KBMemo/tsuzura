@@ -96,7 +96,7 @@ cp .env.example .env.production   # RAILS_MASTER_KEY 等を編集
 chmod 750 start.sh
 ```
 
-`/etc/systemd/system/tsuzura.service` の例:
+`~/.config/systemd/user/kbmemo-media.service` の例:
 
 ```ini
 [Unit]
@@ -105,8 +105,6 @@ After=network.target
 
 [Service]
 Type=simple
-User=kensei
-Group=kensei
 WorkingDirectory=/home/kensei/sites/kbmemo-media
 ExecStart=/home/kensei/sites/kbmemo-media/start.sh
 Restart=on-failure
@@ -119,8 +117,9 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now tsuzura
+systemctl --user daemon-reload
+systemctl --user enable --now kbmemo-media
+systemctl --user status kbmemo-media
 curl -fsS http://127.0.0.1:3008/up
 ```
 
