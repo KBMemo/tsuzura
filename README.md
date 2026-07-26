@@ -2,6 +2,8 @@
 
 `https://media.kbmemo.net` で動作する Rails 8 アプリ（REST API + 最小 Web UI）。
 
+License: [MIT](LICENSE)
+
 * **Phase 1（完了）:** CLI バッチ登録 + KBMemo 連携（`album::` / `image::media:`）
 * **Phase 2（完了）:** Web UI + メモ編集ピッカー連携 — [kbmemo_site/docs/architecture/tsuzura-phase2.adoc](../site/docs/architecture/tsuzura-phase2.adoc)
 
