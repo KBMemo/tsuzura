@@ -38,3 +38,5 @@
 /public/vite
 /public/vite-dev
 /public/vite-test
+# Cursor editor workspace settings
+/.cursor/
