@@ -211,3 +211,8 @@ bin/tsuzura media show 01JH…
 * `/internal/*`: `X-Kbmemo-Internal-Secret`（ENV または credentials `tsuzura.internal_secret`）
 
 CORS: `/v1/*` に `TSUZURA_CORS_ORIGINS`（既定: kbmemo.net + `localhost:3000`）。メモピッカーは KBMemo の `/internal/tsuzura/*` 経由が主。
+
+## Contributing and security
+
+Contribution guidelines are in [CONTRIBUTING.md](CONTRIBUTING.md). Do not report security
+issues publicly; use the private reporting procedure in [SECURITY.md](SECURITY.md).
