@@ -5,9 +5,9 @@
 License: [MIT](LICENSE)
 
 * **Phase 1（完了）:** CLI バッチ登録 + KBMemo 連携（`album::` / `image::media:`）
-* **Phase 2（完了）:** Web UI + メモ編集ピッカー連携 — [kbmemo_site/docs/architecture/tsuzura-phase2.adoc](../site/docs/architecture/tsuzura-phase2.adoc)
+* **Phase 2（完了）:** Web UI + メモ編集ピッカー連携 — [KBMemoのTsuzura Phase 2設計](https://github.com/KBMemo/kbmemo/blob/main/docs/architecture/tsuzura-phase2.adoc)
 
-設計: [media-platform.adoc](../site/docs/architecture/media-platform.adoc)
+設計: [media-platform.adoc](https://github.com/KBMemo/kbmemo/blob/main/docs/architecture/media-platform.adoc)
 
 ## Web UI（Phase 2）
 
@@ -22,7 +22,8 @@ License: [MIT](LICENSE)
 
 ## 開発
 
-KBMemo と credentials / DB を共有します（`config/master.key` → `../../site/config/master.key`）。
+KBMemo と同じcredentials内容とDBを使用します。開発環境ごとに共通の
+`RAILS_MASTER_KEY`を安全に設定するか、追跡対象外の`config/master.key`を配置してください。
 
 ```bash
 cd kbmemo-media
@@ -107,8 +108,8 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/kensei/sites/kbmemo-media
-ExecStart=/home/kensei/sites/kbmemo-media/start.sh
+WorkingDirectory=/srv/kbmemo/tsuzura
+ExecStart=/srv/kbmemo/tsuzura/start.sh
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
@@ -130,12 +131,12 @@ curl -fsS http://127.0.0.1:3008/up
 `bin/deploy` で pull・`bundle install`・`npm ci`・`npm run build`・**`db:migrate`**（`tsuzura_*` テーブル等）・`kbmemo-media` user service 再起動・ヘルスチェックを一括実行します。再起動後は既定で3秒待機し、`TSUZURA_HEALTH_CHECK_DELAY` で変更できます。
 
 ```bash
-cd /home/kensei/sites/kbmemo-media
+cd /srv/kbmemo/tsuzura
 bin/deploy
 bin/deploy --branch main
 ```
 
-詳細: [kbmemo_site/docs/deployment/production.adoc](../site/docs/deployment/production.adoc) の Tsuzura 節。
+詳細: [KBMemo production guide](https://github.com/KBMemo/kbmemo/blob/main/docs/deployment/production.adoc) のTsuzura節。
 
 ## テスト
 

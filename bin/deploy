@@ -33,7 +33,7 @@ Environment:
   TSUZURA_GIT_REMOTE     git remote (default: origin)
 
 Example:
-  cd /home/kensei/sites/kbmemo-media && bin/deploy
+  cd /srv/kbmemo/tsuzura && bin/deploy
   bin/deploy --branch main
 EOF
 }

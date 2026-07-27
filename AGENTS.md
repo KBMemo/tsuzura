@@ -25,7 +25,9 @@
 - `app/frontend`: Vite entrypoint、画像編集 JavaScript、CSS
 - `script/tsuzura_cli.rb`: CLI と watch / manifest 処理
 - `lib/tasks/tsuzura_metadata.rake`: metadata 再抽出 task
-- 詳細設計は隣接する `../site/docs/architecture/media-platform.adoc` と Tsuzura phase 文書を参照する
+- 詳細設計は
+  `https://github.com/KBMemo/kbmemo/tree/main/docs/architecture` の
+  `media-platform.adoc` と Tsuzura phase 文書を参照する
 
 ## Media と Storage
 
